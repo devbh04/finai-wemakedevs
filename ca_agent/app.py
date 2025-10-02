@@ -3,12 +3,27 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
+from fastapi.middleware.cors import CORSMiddleware
 from crew import create_crew
 from utils.document_processor import DocumentProcessor
 import shutil
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI(title="CA Agent - Document Analysis")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Add your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 UPLOAD_DIR = Path("./input_files")
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -35,6 +50,13 @@ async def analyze_documents(
         saved_files.append(str(file_path))
 
     try:
+        # Check if API key is available
+        if not os.environ.get("CEREBRAS_API_KEY"):
+            return JSONResponse(
+                content={"error": "CEREBRAS_API_KEY not found in environment variables. Please set your Cerebras API key."}, 
+                status_code=500
+            )
+        
         # Process documents first
         doc_processor = DocumentProcessor(saved_files)
         processed_docs = doc_processor.process_documents()

@@ -23,7 +23,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   
   // Zustand store
-  const { files, clearAllFiles } = useFileUploadStore();
+  const { files, clearAllFiles, addFile } = useFileUploadStore();
   
   // Convert Zustand files to legacy format for compatibility
   const assignedFiles = Object.fromEntries(
@@ -49,27 +49,55 @@ export default function Home() {
   };
 
   const handleUpload = async () => {
+    if (!selectedButton) {
+      alert("Please select an occupation type first.");
+      return;
+    }
+
     setLoading(true);
     try {
-      for (const [optionName, file] of Object.entries(assignedFiles)) {
-        const formData = new FormData();
-        formData.append("image", file);
-        formData.append("model", optionName);
+      const formData = new FormData();
+      
+      // Map frontend button values to backend expected values
+      const clientTypeMapping: { [key: string]: string } = {
+        "salaried": "salaried",
+        "self-employed": "self_employed", 
+        "businessman": "business"
+      };
+      
+      const clientType = clientTypeMapping[selectedButton] || selectedButton;
+      formData.append("client_type", clientType);
+      
+      // Add all uploaded files
+      Object.values(assignedFiles).forEach((file) => {
+        formData.append("files", file);
+      });
 
-        const response = await axios.post(
-          "http://127.0.0.1:8000/upload",
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
+      console.log("Uploading files:", Object.keys(assignedFiles));
+      console.log("Frontend button:", selectedButton);
+      console.log("Backend client_type:", clientType);
 
-        console.log(`${optionName} upload response:`, response.data);
-      }
-      alert("All files uploaded successfully!");
+      const response = await axios.post(
+        "http://127.0.0.1:8000/analyze",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 60000, // 60 seconds timeout for analysis
+          withCredentials: false, // Handle CORS
+        }
+      );
+
+      console.log("Analysis response:", response.data);
+      
+      // Store the result in localStorage to pass to ca-report page
+      localStorage.setItem("caAnalysisResult", JSON.stringify(response.data));
+      
+      // Navigate to ca-report page
+      window.location.href = "/ca-report";
+      
     } catch (err: any) {
-      console.error("Upload failed:", err.response?.data || err.message);
-      alert("Upload failed. Check console for details.");
+      console.error("Analysis failed:", err.response?.data || err.message);
+      alert(`Analysis failed: ${err.response?.data?.error || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -172,7 +200,89 @@ export default function Home() {
             )}
           </div>
 
-          {/* File Upload Section - Show only when occupation is selected */}
+          {/* Master File Upload Section - Show when occupation is selected */}
+          <AnimatePresence mode="wait">
+            {selectedButton && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="mt-8 w-full max-w-4xl mx-auto"
+              >
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 shadow-lg">
+                  <div className="text-center mb-4">
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">
+                      🚀 Quick Upload for {selectedButton.charAt(0).toUpperCase() + selectedButton.slice(1).replace('-', ' ')}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Upload all your documents at once for instant analysis
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-col items-center space-y-4">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const uploadedFiles = Array.from(e.target.files || []);
+                        uploadedFiles.forEach((file, index) => {
+                          const optionName = `document_${index + 1}`;
+                          addFile(optionName, file);
+                          handleFileAssigned(optionName, file);
+                        });
+                      }}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
+                    />
+                    
+                    {Object.keys(assignedFiles).length > 0 && (
+                      <div className="w-full">
+                        <div className="text-center mb-3">
+                          <span className="text-sm text-green-600 font-medium">
+                            ✅ {Object.keys(assignedFiles).length} file(s) ready for analysis
+                          </span>
+                        </div>
+                        
+                        <Button
+                          onClick={handleUpload}
+                          disabled={loading}
+                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50"
+                        >
+                          {loading ? (
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Analyzing Documents...</span>
+                            </div>
+                          ) : (
+                            `🔍 Analyze ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? 's' : ''}`
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Divider */}
+          {selectedButton && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              className="flex items-center justify-center my-8"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="h-px bg-gray-300 w-16"></div>
+                <span className="text-sm text-gray-500 font-medium">OR</span>
+                <div className="h-px bg-gray-300 w-16"></div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Detailed File Upload Section - Show only when occupation is selected */}
           <AnimatePresence mode="wait">
             {selectedButton && documentConfig && (
               <motion.div 
@@ -193,10 +303,10 @@ export default function Home() {
                   className="text-center mb-4 sm:mb-6"
                 >
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-                    Upload {documentConfig.title}
+                    📋 Organize {documentConfig.title}
                   </h2>
                   <p className="text-sm sm:text-base text-gray-600 px-2 sm:px-0">
-                    Please upload the required documents for verification and processing
+                    Upload and organize documents by category for detailed tracking
                   </p>
                 </motion.div>
 
@@ -305,18 +415,21 @@ export default function Home() {
                         className="cursor-pointer bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-2 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors text-sm sm:text-lg w-full sm:w-auto"
                       >
                         {loading ? (
-                          "Uploading..."
+                          <div className="flex items-center justify-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>Analyzing Documents...</span>
+                          </div>
                         ) : (
-                          `Upload ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? 's' : ''}`
+                          `🔍 Analyze ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? 's' : ''}`
                         )}
                       </Button>
 
                       {/* Upload Info */}
                       <div className="mt-2 sm:mt-3 text-xs text-gray-500 px-2 sm:px-0">
                         {documentConfig.options.length > 0 && documentConfig.options.filter(doc => assignedFiles[doc]).length !== documentConfig.options.length ? (
-                          "Upload all required documents to proceed"
+                          "Upload all required documents to proceed with analysis"
                         ) : (
-                          "Ready to upload! Optional documents will be included automatically."
+                          "Ready for analysis! Optional documents will be included automatically."
                         )}
                       </div>
                     </div>
