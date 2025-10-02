@@ -5,7 +5,7 @@ export default function RootLayout({
 }>) {
   return (
       <main
-        className={`bg-white`}
+        className={`bg-black`}
       >
         {children}
       </main>

@@ -84,7 +84,7 @@ export default function Home() {
   const documentConfig = getDocumentConfig();
 
   return (
-    <div className="min-h-screen w-full bg-white relative">
+    <div className="min-h-screen w-full bg-black relative">
       {/* Fixed gradient background */}
       <div
         className="fixed inset-0 z-0"
