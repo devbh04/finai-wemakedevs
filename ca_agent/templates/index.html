@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CA Agent - Document Analysis</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>CA Agent Document Upload</h1>
+        <form id="uploadForm">
+            <label for="client_type">Client Type:</label>
+            <select id="client_type" name="client_type" required>
+                <option value="salaried">Salaried</option>
+                <option value="self_employed">Self Employed</option>
+                <option value="business">Business</option>
+            </select>
+            <br><br>
+            <label>Upload PDF Documents:</label>
+            <input type="file" id="files" name="files" multiple required accept=".pdf">
+            <br><br>
+            <button type="submit">Analyze Documents</button>
+        </form>
+
+        <h2>Analysis Results:</h2>
+        <div id="response-container" style="display:none;">
+            <div class="result-header">
+                <h3 id="task-name"></h3>
+                <div class="view-toggle">
+                    <button id="formatted-view" class="active">Formatted View</button>
+                    <button id="markdown-view">Markdown View</button>
+                </div>
+            </div>
+            <div id="response" class="response-content"></div>
+            <div id="markdown-content" class="markdown-content" style="display:none;"></div>
+            <div id="file-info" class="file-info"></div>
+        </div>
+        <div id="loading" style="display:none;" class="loading">
+            <p>🔍 Analyzing your documents... This may take a few moments.</p>
+        </div>
+        <div id="error" style="display:none;" class="error-message"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const responseEl = document.getElementById('response');
+
+        function formatFinancialReport(text) {
+            // Clean up escape characters first
+            text = text.replace(/\\n/g, '\n').replace(/\\"/g, '"');
+            
+            // Convert to HTML with enhanced formatting
+            let formatted = text
+                // Main title formatting
+                .replace(/(FINANCIAL ANALYSIS REPORT[^\n]*)/gi, '<div class="main-title">$1</div>')
+                
+                // Section headers with ### or ##
+                .replace(/#{2,4}\s*(\d+\.\s*[A-Z\s&]+[^\n]*)/g, '<div class="section-header">$1</div>')
+                
+                // Regular section headers with numbers (1., 2., etc.)
+                .replace(/^(\d+\.\s+[A-Z\s&]+[A-Z\s]*[^\n]*)/gm, '<div class="section-header">$1</div>')
+                
+                // Subsection headers (starting with -)
+                .replace(/^-\s+([^:\n]+):/gm, '<div class="subsection-header">$1:</div>')
+                
+                // Financial amounts - enhanced to catch more patterns
+                .replace(/(₹\s*[\d,]+\.?\d*|Rs\.?\s*[\d,]+\.?\d*|\$[\d,]+\.?\d*)/g, '<span class="amount">$1</span>')
+                
+                // Percentages - enhanced
+                .replace(/(\d+\.?\d*\s*%|≈\s*\d+\.?\d*\s*%)/g, '<span class="percentage">$1</span>')
+                
+                // Bold important terms - expanded list
+                .replace(/\b(TDS|PF|HRA|LTA|Section 80C|Section\s*80C|Taxable Income|Total Income|Effective|Tax|Deduction|Refund|ELSS|PPF|Special Allowance|Conveyance|FY\s*\d{4}-\d{2})\b/gi, '<span class="highlight-term">$1</span>')
+                
+                // Insight items with table-like structure
+                .replace(/^\|\s*([^|]+)\s*\|\s*([^|]*)\s*\|/gm, '<div class="insight-item"><strong>$1</strong> $2</div>')
+                
+                // Simple bullet points
+                .replace(/^-\s+([^\n]+)/gm, '<div class="insight-item">• $1</div>')
+                
+                // Convert line breaks to proper spacing
+                .replace(/\n\n+/g, '</div><div class="content-section">')
+                .replace(/\n/g, '<br>')
+                
+                // Separator lines
+                .replace(/={3,}/g, '<hr class="section-divider">')
+                .replace(/---+/g, '<hr class="subsection-divider">');
+            
+            // Wrap in content sections
+            formatted = '<div class="content-section">' + formatted + '</div>';
+            
+            return formatted;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const files = document.getElementById('files').files;
+            const clientType = document.getElementById('client_type').value;
+
+            const formData = new FormData();
+            formData.append("client_type", clientType);
+            for (let i = 0; i < files.length; i++) {
+                formData.append("files", files[i]);
+            }
+
+            // Show loading state
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('response-container').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const res = await fetch("/analyze", {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+                
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.error) {
+                    // Show error
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('error').innerHTML = `<h3>Error:</h3><p>${data.error}</p>`;
+                } else {
+                    // Show results
+                    document.getElementById('response-container').style.display = 'block';
+                    document.getElementById('task-name').textContent = `Task: ${data.task}`;
+                    
+                    // Format the result text with enhanced styling
+                    let formattedResult = data.result;
+                    if (typeof formattedResult === 'string') {
+                        formattedResult = formatFinancialReport(formattedResult);
+                    }
+                    
+                    // Set both formatted and markdown content
+                    document.getElementById('response').innerHTML = formattedResult;
+                    document.getElementById('markdown-content').innerHTML = `<pre>${data.markdown || data.result}</pre>`;
+                    
+                    // Show file save info
+                    if (data.file_saved) {
+                        document.getElementById('file-info').innerHTML = `<p><strong>✅ Report saved to:</strong> ${data.file_saved}</p>`;
+                    }
+                    
+                    // Setup view toggle functionality
+                    setupViewToggle();
+                }
+            } catch (err) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').innerHTML = `<h3>Error:</h3><p>${err.message}</p>`;
+            }
+        });
+
+        function setupViewToggle() {
+            const formattedBtn = document.getElementById('formatted-view');
+            const markdownBtn = document.getElementById('markdown-view');
+            const responseDiv = document.getElementById('response');
+            const markdownDiv = document.getElementById('markdown-content');
+
+            formattedBtn.addEventListener('click', () => {
+                formattedBtn.classList.add('active');
+                markdownBtn.classList.remove('active');
+                responseDiv.style.display = 'block';
+                markdownDiv.style.display = 'none';
+            });
+
+            markdownBtn.addEventListener('click', () => {
+                markdownBtn.classList.add('active');
+                formattedBtn.classList.remove('active');
+                responseDiv.style.display = 'none';
+                markdownDiv.style.display = 'block';
+            });
+        }
+    </script>
+</body>
+</html>
