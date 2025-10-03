@@ -115,7 +115,7 @@ async def analyze_documents(
             
         # Return both JSON data and markdown for display
 
-        printable_content = content={
+        printable_content ={
             "task": task_name, 
             "result": result_content,
             "markdown": markdown_content,
