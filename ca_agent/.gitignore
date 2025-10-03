@@ -4,4 +4,4 @@ __pycache__/
 .env
 #ignore all type of .env files
 *.env
-./markdown_files
+markdown_files/
