@@ -82,7 +82,7 @@ export default function Home() {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
-          timeout: 60000, // 60 seconds timeout for analysis
+          timeout: 240000, // 240 seconds timeout for analysis
           withCredentials: false, // Handle CORS
         }
       );
