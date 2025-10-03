@@ -1,0 +1,487 @@
+tasks:
+  - name: SalariedAnalysis
+    description: >
+      Perform comprehensive financial analysis for salaried individuals using provided documents 
+      including salary slips, Form 16, bank statements, investment proofs, and other relevant records.
+    expected_output: >
+      COMPREHENSIVE FINANCIAL ANALYSIS REPORT - SALARIED INDIVIDUAL
+      =============================================================
+
+      EXECUTIVE SUMMARY
+      - Financial Year: [Year]
+      - Total Gross Income: ₹[Amount]
+      - Total Taxable Income: ₹[Amount]
+      - Final Tax Liability: ₹[Amount]
+      - TDS Already Deducted: ₹[Amount]
+      - Tax Payable/Refundable: ₹[Amount]
+      - Recommended Tax Regime: [Old/New]
+
+      1. DOCUMENTS ANALYZED & DATA EXTRACTION SUMMARY
+      -----------------------------------------------
+      - List of all processed documents with extraction status
+      - Key data points extracted from each document
+      - Data consistency check across documents
+
+      2. DETAILED INCOME ANALYSIS
+      ---------------------------
+      2.1 Salary Structure Breakdown (Annual)
+          - Basic Salary: ₹[Amount]
+          - House Rent Allowance (HRA): ₹[Amount]
+          - Special Allowance: ₹[Amount]
+          - Conveyance Allowance: ₹[Amount]
+          - Leave Travel Allowance (LTA): ₹[Amount]
+          - Medical Allowance: ₹[Amount]
+          - Other Allowances: ₹[Amount]
+          - Total Gross Salary: ₹[Amount]
+
+      2.2 Exemptions Calculation
+          - HRA Exemption: ₹[Amount] (with detailed calculation)
+          - LTA Exemption: ₹[Amount] (with supporting travel details)
+          - Conveyance Exemption: ₹[Amount]
+          - Total Exemptions: ₹[Amount]
+
+      2.3 Other Income Sources
+          - Interest Income (Savings Account): ₹[Amount]
+          - Interest Income (Fixed Deposits): ₹[Amount]
+          - Rental Income: ₹[Amount]
+          - Other Income: ₹[Amount]
+
+      3. DEDUCTIONS & EXEMPTIONS ANALYSIS
+      -----------------------------------
+      3.1 Section 16 Deductions
+          - Standard Deduction: ₹50,000
+          - Professional Tax: ₹[Amount]
+
+      3.2 Chapter VI-A Deductions
+          - Section 80C (EPF, PPF, LIC, ELSS, etc.): ₹[Amount] (with breakdown)
+          - Section 80D (Health Insurance): ₹[Amount]
+          - Section 80E (Education Loan Interest): ₹[Amount]
+          - Section 80G (Donations): ₹[Amount]
+          - Section 80TTA/TTB (Interest Income): ₹[Amount]
+          - Other Sections: ₹[Amount]
+          - Total Chapter VI-A Deductions: ₹[Amount]
+
+      4. TAX COMPUTATION & LIABILITY ANALYSIS
+      ---------------------------------------
+      4.1 Income Calculation
+          - Gross Total Income: ₹[Amount]
+          - Less: Deductions under Section 16: ₹[Amount]
+          - Less: Chapter VI-A Deductions: ₹[Amount]
+          - Total Taxable Income: ₹[Amount]
+
+      4.2 Tax Calculation (Old Regime)
+          - Income Tax as per Slabs: ₹[Amount]
+          - Health & Education Cess (4%): ₹[Amount]
+          - Total Tax Liability: ₹[Amount]
+
+      4.3 Tax Calculation (New Regime)
+          - Income Tax as per Slabs: ₹[Amount]
+          - Health & Education Cess (4%): ₹[Amount]
+          - Total Tax Liability: ₹[Amount]
+
+      4.4 TDS Verification & Final Liability
+          - TDS as per Form 16: ₹[Amount]
+          - Advance Tax Paid: ₹[Amount]
+          - Total Taxes Paid: ₹[Amount]
+          - Final Tax Payable/Refundable: ₹[Amount]
+
+      5. FINANCIAL HEALTH ASSESSMENT
+      ------------------------------
+      5.1 Savings Ratio Analysis
+          - Savings to Income Ratio: [Percentage]%
+          - Tax Saving Investments Efficiency: [Assessment]
+
+      5.2 Cash Flow Analysis
+          - Monthly Take-home Salary: ₹[Amount]
+          - Monthly Fixed Obligations: ₹[Amount]
+          - Disposable Income: ₹[Amount]
+
+      6. COMPLIANCE & FILING STATUS
+      -----------------------------
+      6.1 Document Compliance Check
+          - Form 16 Verification: [Complete/Incomplete]
+          - Investment Proofs Validation: [Complete/Incomplete]
+          - Bank Statement Reconciliation: [Status]
+
+      6.2 ITR Filing Requirements
+          - Recommended ITR Form: [ITR-1/ITR-2]
+          - Due Dates for Filing
+          - Documents Required for Filing
+
+      7. RECOMMENDATIONS & ACTION PLAN
+      --------------------------------
+      7.1 Immediate Actions (Next 30 days)
+          - Tax Payment Requirements
+          - Document Collection Points
+          - Verification Steps
+
+      7.2 Strategic Recommendations
+          - Optimal Tax Regime Selection
+          - Investment Planning Suggestions
+          - Tax Saving Opportunities for Next FY
+
+      7.3 Risk Mitigation
+          - Compliance Risks Identified
+          - Documentation Gaps
+          - Verification Requirements
+
+      APPENDICES
+      ----------
+      - Document-wise Data Extraction Details
+      - Assumptions & Limitations
+      - Key Contact Information
+
+      IMPORTANT: Use ONLY the actual data extracted from provided documents. Mark any missing data as "Not Available" and proceed with analysis based on available information.
+
+    agents: [DocumentParser, CharteredAccountant, ReportGenerator]
+
+  - name: SelfEmployedAnalysis
+    description: >
+      Perform comprehensive financial analysis for self-employed professionals, freelancers, 
+      and consultants using provided invoices, bank statements, expense records, and financial documents.
+    expected_output: >
+      COMPREHENSIVE FINANCIAL ANALYSIS REPORT - SELF EMPLOYED PROFESSIONAL
+      ===================================================================
+
+      EXECUTIVE SUMMARY
+      - Financial Year: [Year]
+      - Total Revenue/Receipts: ₹[Amount]
+      - Total Allowable Business Expenses: ₹[Amount]
+      - Net Business Income: ₹[Amount]
+      - Total Taxable Income: ₹[Amount]
+      - Estimated Tax Liability: ₹[Amount]
+      - GST Compliance Status: [Compliant/Non-Compliant]
+
+      1. DOCUMENTS ANALYZED & DATA EXTRACTION
+      ---------------------------------------
+      - List of all processed documents (Invoices, Bank Statements, Expense Bills, GST Returns)
+      - Revenue/Income documents extraction summary
+      - Expense documents extraction summary
+      - GST and tax document analysis
+
+      2. REVENUE & INCOME ANALYSIS
+      ----------------------------
+      2.1 Professional Fee/Service Income
+          - Client-wise Revenue Breakdown
+          - Retainer Income: ₹[Amount]
+          - Project-based Income: ₹[Amount]
+          - Other Professional Income: ₹[Amount]
+          - Total Gross Receipts: ₹[Amount]
+
+      2.2 Other Income Sources
+          - Interest Income: ₹[Amount]
+          - Rental Income: ₹[Amount]
+          - Capital Gains: ₹[Amount]
+          - Other Income: ₹[Amount]
+
+      3. BUSINESS EXPENSES ANALYSIS
+      -----------------------------
+      3.1 Direct Business Expenses
+          - Office Rent: ₹[Amount]
+          - Utilities (Internet, Phone, Electricity): ₹[Amount]
+          - Professional Subscriptions/Memberships: ₹[Amount]
+          - Software & Tools: ₹[Amount]
+          - Marketing & Advertising: ₹[Amount]
+          - Travel & Conveyance: ₹[Amount]
+          - Client Entertainment: ₹[Amount]
+
+      3.2 Equipment & Depreciation
+          - Computer/Equipment Purchase: ₹[Amount]
+          - Depreciation Claimed: ₹[Amount]
+          - Furniture & Fixtures: ₹[Amount]
+
+      3.3 Professional Development
+          - Training & Courses: ₹[Amount]
+          - Books & Publications: ₹[Amount]
+          - Conference/Workshop Expenses: ₹[Amount]
+
+      4. FINANCIAL PERFORMANCE ANALYSIS
+      ---------------------------------
+      4.1 Profit & Loss Statement
+          - Gross Revenue: ₹[Amount]
+          - Less: Direct Expenses: ₹[Amount]
+          - Gross Profit: ₹[Amount]
+          - Less: Indirect Expenses: ₹[Amount]
+          - Net Business Income: ₹[Amount]
+          - Add: Other Income: ₹[Amount]
+          - Gross Total Income: ₹[Amount]
+
+      4.2 Key Performance Indicators
+          - Profit Margin: [Percentage]%
+          - Expense to Revenue Ratio: [Percentage]%
+          - Monthly Average Income: ₹[Amount]
+          - Client Concentration Analysis
+
+      5. TAX COMPUTATION & COMPLIANCE
+      -------------------------------
+      5.1 Income Tax Calculation
+          - Net Business Income: ₹[Amount]
+          - Less: Deductions under Chapter VI-A: ₹[Amount]
+          - Total Taxable Income: ₹[Amount]
+          - Income Tax Liability: ₹[Amount]
+          - Advance Tax Requirements: ₹[Amount]
+
+      5.2 GST Compliance Analysis
+          - GST Registration Status: [Registered/Unregistered]
+          - GST Returns Filed: [Yes/No]
+          - GST Liability: ₹[Amount]
+          - Input Tax Credit Available: ₹[Amount]
+
+      5.3 Presumptive Taxation Analysis (Section 44ADA)
+          - Eligibility for Presumptive Taxation: [Yes/No]
+          - Presumptive Income (50% of Gross Receipts): ₹[Amount]
+          - Comparison with Actual Income
+
+      6. FINANCIAL HEALTH ASSESSMENT
+      ------------------------------
+      6.1 Cash Flow Analysis
+          - Monthly Average Collections: ₹[Amount]
+          - Monthly Average Expenses: ₹[Amount]
+          - Net Monthly Cash Flow: ₹[Amount]
+          - Emergency Fund Coverage: [Months]
+
+      6.2 Business Sustainability
+          - Client Diversity Score
+          - Revenue Trend Analysis
+          - Expense Control Efficiency
+
+      7. DEDUCTIONS & TAX PLANNING
+      ----------------------------
+      7.1 Available Deductions
+          - Home Office Deduction: ₹[Amount]
+          - Vehicle Expenses: ₹[Amount]
+          - Professional Development: ₹[Amount]
+          - Health Insurance (Section 80D): ₹[Amount]
+          - Retirement Contributions (Section 80C): ₹[Amount]
+
+      8. COMPLIANCE STATUS & REQUIREMENTS
+      -----------------------------------
+      8.1 Tax Compliance
+          - Advance Tax Payment Status
+          - TDS Deduction Compliance
+          - Form 26AS Reconciliation
+
+      8.2 GST Compliance
+          - Return Filing Status (GSTR-1, GSTR-3B)
+          - Payment Compliance
+          - Input Tax Credit Optimization
+
+      9. RECOMMENDATIONS & STRATEGIC PLAN
+      -----------------------------------
+      9.1 Immediate Compliance Actions
+          - Pending Tax Payments
+          - GST Return Filings
+          - Documentation Requirements
+
+      9.2 Business Optimization
+          - Expense Management Suggestions
+          - Revenue Diversification Strategies
+          - Tax Saving Opportunities
+
+      9.3 Financial Planning
+          - Retirement Planning Recommendations
+          - Insurance Coverage Assessment
+          - Investment Strategy
+
+      APPENDICES
+      ----------
+      - Monthly Income-Expense Statement
+      - Client-wise Revenue Analysis
+      - GST Compliance Details
+
+    agents: [DocumentParser, CharteredAccountant, ReportGenerator]
+
+  - name: BusinessAnalysis
+    description: >
+      Perform comprehensive financial analysis for businesses, companies, firms, and traders 
+      including complete accounting, compliance verification, and strategic business insights.
+    expected_output: >
+      COMPREHENSIVE BUSINESS FINANCIAL ANALYSIS REPORT
+      ===============================================
+
+      EXECUTIVE SUMMARY
+      - Financial Year: [Year]
+      - Total Revenue: ₹[Amount]
+      - Net Profit: ₹[Amount]
+      - Profit Margin: [Percentage]%
+      - Total Tax Liability: ₹[Amount]
+      - GST Compliance Score: [Percentage]%
+      - Overall Financial Health: [Rating]
+
+      1. DOCUMENTS ANALYZED & DATA INTEGRITY
+      --------------------------------------
+      - Complete document inventory with extraction status
+      - Financial statement validation
+      - Tax document reconciliation status
+      - Compliance document analysis
+
+      2. FINANCIAL STATEMENTS ANALYSIS
+      --------------------------------
+      2.1 Profit & Loss Statement
+          Revenue Analysis:
+          - Gross Sales/Turnover: ₹[Amount]
+          - Less: Sales Returns/Discounts: ₹[Amount]
+          - Net Sales: ₹[Amount]
+          - Other Operating Income: ₹[Amount]
+          - Total Revenue: ₹[Amount]
+
+          Expense Analysis:
+          - Cost of Goods Sold: ₹[Amount]
+          - Employee Benefit Expenses: ₹[Amount]
+          - Finance Costs: ₹[Amount]
+          - Depreciation & Amortization: ₹[Amount]
+          - Other Expenses: ₹[Amount]
+          - Total Expenses: ₹[Amount]
+
+          Profit Analysis:
+          - Gross Profit: ₹[Amount] (Margin: [Percentage]%)
+          - EBITDA: ₹[Amount]
+          - Operating Profit: ₹[Amount]
+          - Profit Before Tax: ₹[Amount]
+          - Profit After Tax: ₹[Amount]
+
+      2.2 Balance Sheet Analysis
+          Assets:
+          - Current Assets: ₹[Amount] (Cash, Inventory, Receivables)
+          - Fixed Assets: ₹[Amount] (Net Block)
+          - Investments: ₹[Amount]
+          - Total Assets: ₹[Amount]
+
+          Liabilities:
+          - Current Liabilities: ₹[Amount] (Payables, Short-term debt)
+          - Long-term Liabilities: ₹[Amount] (Loans, Debentures)
+          - Total Liabilities: ₹[Amount]
+
+          Equity:
+          - Share Capital: ₹[Amount]
+          - Reserves & Surplus: ₹[Amount]
+          - Total Equity: ₹[Amount]
+
+      2.3 Cash Flow Statement
+          - Operating Cash Flow: ₹[Amount]
+          - Investing Cash Flow: ₹[Amount]
+          - Financing Cash Flow: ₹[Amount]
+          - Net Cash Flow: ₹[Amount]
+          - Closing Cash Balance: ₹[Amount]
+
+      3. FINANCIAL RATIO ANALYSIS
+      ---------------------------
+      3.1 Profitability Ratios
+          - Gross Profit Margin: [Percentage]%
+          - Net Profit Margin: [Percentage]%
+          - Return on Equity (ROE): [Percentage]%
+          - Return on Assets (ROA): [Percentage]%
+
+      3.2 Liquidity Ratios
+          - Current Ratio: [Ratio]
+          - Quick Ratio: [Ratio]
+          - Cash Ratio: [Ratio]
+
+      3.3 Solvency Ratios
+          - Debt-to-Equity Ratio: [Ratio]
+          - Interest Coverage Ratio: [Ratio]
+          - Debt Service Coverage Ratio: [Ratio]
+
+      3.4 Efficiency Ratios
+          - Inventory Turnover: [Ratio]
+          - Receivables Turnover: [Ratio]
+          - Asset Turnover: [Ratio]
+
+      4. TAX COMPUTATION & COMPLIANCE
+      -------------------------------
+      4.1 Income Tax Calculation
+          - Book Profit: ₹[Amount]
+          - Add: Disallowances: ₹[Amount]
+          - Less: Allowable Deductions: ₹[Amount]
+          - Total Taxable Income: ₹[Amount]
+          - Corporate Tax Liability: ₹[Amount]
+          - Minimum Alternate Tax (MAT) Analysis
+
+      4.2 GST Compliance Analysis
+          - Total Outward Taxable Supply: ₹[Amount]
+          - Total GST Liability: ₹[Amount]
+          - Total Input Tax Credit: ₹[Amount]
+          - Net GST Payable: ₹[Amount]
+          - GSTR-1 vs GSTR-3B Reconciliation
+          - GST Return Filing Status
+
+      4.3 TDS/TCS Compliance
+          - TDS on Payments: ₹[Amount]
+          - TDS on Receipts: ₹[Amount]
+          - TDS Return Filing Status
+          - TDS Default Analysis
+
+      5. BUSINESS PERFORMANCE METRICS
+      -------------------------------
+      5.1 Operational Efficiency
+          - Revenue per Employee: ₹[Amount]
+          - Operating Expense Ratio: [Percentage]%
+          - Working Capital Cycle: [Days]
+
+      5.2 Growth Analysis
+          - Year-over-Year Revenue Growth: [Percentage]%
+          - Profit Growth Trend
+          - Market Position Assessment
+
+      6. COMPLIANCE STATUS AUDIT
+      --------------------------
+      6.1 Statutory Compliance
+          - Companies Act Compliance (if applicable)
+          - GST Law Compliance
+          - Income Tax Act Compliance
+          - Other Regulatory Compliance
+
+      6.2 Internal Controls
+          - Accounting System Assessment
+          - Internal Audit Status
+          - Financial Reporting Quality
+
+      7. RISK ASSESSMENT
+      -----------------
+      7.1 Financial Risks
+          - Liquidity Risk: [High/Medium/Low]
+          - Solvency Risk: [High/Medium/Low]
+          - Market Risk: [High/Medium/Low]
+
+      7.2 Operational Risks
+          - Customer Concentration Risk
+          - Supplier Dependency Risk
+          - Regulatory Compliance Risk
+
+      8. STRATEGIC RECOMMENDATIONS
+      ----------------------------
+      8.1 Immediate Priority Actions
+          - Compliance Gap Closures
+          - Cash Flow Improvement Measures
+          - Tax Optimization Opportunities
+
+      8.2 Operational Improvements
+          - Cost Reduction Strategies
+          - Revenue Enhancement Opportunities
+          - Process Efficiency Suggestions
+
+      8.3 Long-term Strategic Planning
+          - Growth Strategy Recommendations
+          - Capital Structure Optimization
+          - Risk Management Framework
+
+      8.4 Technology & Automation
+          - Accounting System Upgrades
+          - Compliance Automation Tools
+          - Digital Transformation Opportunities
+
+      9. COMPLIANCE CALENDAR
+      ----------------------
+      - Upcoming Due Dates for Tax Filings
+      - GST Return Schedule
+      - TDS Payment Dates
+      - Annual Compliance Timeline
+
+      APPENDICES
+      ----------
+      - Detailed Financial Statements
+      - Tax Computation Working
+      - Compliance Checklist
+      - Ratio Analysis Details
+
+    agents: [DocumentParser, CharteredAccountant, ReportGenerator]

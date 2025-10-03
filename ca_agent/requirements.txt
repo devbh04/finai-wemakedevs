@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+python-multipart
+jinja2
+crewai
+PyPDF2
+pyyaml
+pathlib
