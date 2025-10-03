@@ -114,6 +114,14 @@ async def analyze_documents(
             markdown_content = result_content  # Fallback if markdown creation fails
             
         # Return both JSON data and markdown for display
+
+        printable_content = content={
+            "task": task_name, 
+            "result": result_content,
+            "markdown": markdown_content,
+            "file_saved": str(file_path) if 'file_path' in locals() else "Error saving file"
+        }
+        print(printable_content)
         return JSONResponse(content={
             "task": task_name, 
             "result": result_content,
