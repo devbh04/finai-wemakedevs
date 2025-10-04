@@ -6,10 +6,23 @@ interface FileData {
   fileName: string;
 }
 
+interface SecureSession {
+  upload_session_id: string;
+  access_token: string;
+  expires_at: string;
+  processing_key?: string;
+  access_granted?: boolean;
+}
+
 interface FileUploadState {
   // File data indexed by option name
   files: { [optionName: string]: FileData };
   activeOption: string | null;
+  
+  // Secure session management
+  secureSession: SecureSession | null;
+  uploadedFiles: any[];
+  isAccessGranted: boolean;
   
   // Actions
   setActiveOption: (option: string | null) => void;
@@ -19,11 +32,23 @@ interface FileUploadState {
   getFileForOption: (optionName: string) => FileData | null;
   getPreviewUrlForOption: (optionName: string) => string | null;
   getAllAssignedOptions: () => string[];
+  
+  // Secure session actions
+  setSecureSession: (session: SecureSession) => void;
+  clearSecureSession: () => void;
+  setUploadedFiles: (files: any[]) => void;
+  grantAccess: (processing_key: string) => void;
+  resetSecureState: () => void;
 }
 
 export const useFileUploadStore = create<FileUploadState>((set, get) => ({
   files: {},
   activeOption: null,
+  
+  // Secure session state
+  secureSession: null,
+  uploadedFiles: [],
+  isAccessGranted: false,
 
   setActiveOption: (option) => set({ activeOption: option }),
 
@@ -85,5 +110,27 @@ export const useFileUploadStore = create<FileUploadState>((set, get) => ({
 
   getAllAssignedOptions: () => {
     return Object.keys(get().files);
-  }
+  },
+
+  // Secure session actions
+  setSecureSession: (session) => set({ secureSession: session }),
+  
+  clearSecureSession: () => set({ secureSession: null, isAccessGranted: false }),
+  
+  setUploadedFiles: (files) => set({ uploadedFiles: files }),
+  
+  grantAccess: (processing_key) => set(state => ({
+    secureSession: state.secureSession ? {
+      ...state.secureSession,
+      processing_key,
+      access_granted: true
+    } : null,
+    isAccessGranted: true
+  })),
+  
+  resetSecureState: () => set({
+    secureSession: null,
+    uploadedFiles: [],
+    isAccessGranted: false
+  })
 }));

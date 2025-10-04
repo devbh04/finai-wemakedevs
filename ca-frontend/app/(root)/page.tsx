@@ -4,6 +4,7 @@ import {MovingBorderButton } from "@/components/ui/moving-border";
 import { RainbowButton } from "@/components/ui/rainbow-button";
 import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
+import SecureFileUpload from "@/components/SecureFileUpload";
 import { useState, useEffect } from "react";
 import { useFileUploadStore } from "@/lib/store";
 import { DocTypes } from "@/lib/constants";
@@ -21,9 +22,13 @@ export default function Home() {
   const [key, setKey] = useState(0);
   const [selectedButton, setSelectedButton] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [useSecureUpload, setUseSecureUpload] = useState(true); // Default to secure upload
+  const [uploadSessionId, setUploadSessionId] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [processingKey, setProcessingKey] = useState<string | null>(null);
   
-  // Zustand store
-  const { files, clearAllFiles, addFile } = useFileUploadStore();
+  // Zustand store - keeping for legacy mode
+  const { files, clearAllFiles, addFile, isAccessGranted, resetSecureState } = useFileUploadStore();
   
   // Convert Zustand files to legacy format for compatibility
   const assignedFiles = Object.fromEntries(
@@ -48,7 +53,76 @@ export default function Home() {
     // File is already removed from Zustand store, no need to manage local state
   };
 
-  const handleUpload = async () => {
+  const handleSecureUploadComplete = (sessionId: string, token: string) => {
+    setUploadSessionId(sessionId);
+    setAccessToken(token);
+    console.log("Secure upload completed:", sessionId);
+  };
+
+  const handleAccessGranted = (key: string) => {
+    setProcessingKey(key);
+    console.log("Access granted with processing key");
+  };
+
+  const handleSecureAnalyze = async () => {
+    if (!selectedButton || !uploadSessionId || !processingKey) {
+      alert("Please complete the secure upload flow first.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Map frontend button values to backend expected values
+      const clientTypeMapping: { [key: string]: string } = {
+        "salaried": "salaried",
+        "self-employed": "self_employed", 
+        "businessman": "business"
+      };
+      
+      const clientType = clientTypeMapping[selectedButton] || selectedButton;
+
+      console.log("Starting secure analysis...");
+      console.log("Session ID:", uploadSessionId);
+      console.log("Client type:", clientType);
+
+      const response = await axios.post(
+        "http://127.0.0.1:8000/analyze-secure",
+        {
+          client_type: clientType,
+          upload_session_id: uploadSessionId,
+          processing_key: processingKey
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          timeout: 300000, // 5 minutes timeout for analysis
+          withCredentials: false,
+        }
+      );
+
+      console.log("Secure analysis response:", response.data);
+      
+      // Store the result in localStorage to pass to ca-report page
+      localStorage.setItem("caAnalysisResult", JSON.stringify(response.data));
+      
+      // Reset secure state
+      resetSecureState();
+      setUploadSessionId(null);
+      setAccessToken(null);
+      setProcessingKey(null);
+      
+      // Navigate to ca-report page
+      window.location.href = "/ca-report";
+      
+    } catch (err: any) {
+      console.error("Secure analysis failed:", err.response?.data || err.message);
+      alert(`Analysis failed: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Legacy upload handler (kept for compatibility)
+  const handleLegacyUpload = async () => {
     if (!selectedButton) {
       alert("Please select an occupation type first.");
       return;
@@ -74,30 +148,33 @@ export default function Home() {
       });
 
       console.log("Uploading files:", Object.keys(assignedFiles));
-      console.log("Frontend button:", selectedButton);
-      console.log("Backend client_type:", clientType);
 
       const response = await axios.post(
         "http://127.0.0.1:8000/analyze",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
-          timeout: 240000, // 240 seconds timeout for analysis
-          withCredentials: false, // Handle CORS
+          timeout: 240000,
+          withCredentials: false,
         }
       );
 
+      if (response.status === 410) {
+        alert("This upload method has been deprecated. Please use the secure upload option.");
+        return;
+      }
+
       console.log("Analysis response:", response.data);
-      
-      // Store the result in localStorage to pass to ca-report page
       localStorage.setItem("caAnalysisResult", JSON.stringify(response.data));
-      
-      // Navigate to ca-report page
       window.location.href = "/ca-report";
       
     } catch (err: any) {
       console.error("Analysis failed:", err.response?.data || err.message);
-      alert(`Analysis failed: ${err.response?.data?.error || err.message}`);
+      if (err.response?.status === 410) {
+        alert("This upload method has been deprecated for security reasons. Please use the secure upload option.");
+      } else {
+        alert(`Analysis failed: ${err.response?.data?.error || err.message}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -200,9 +277,86 @@ export default function Home() {
             )}
           </div>
 
-          {/* Master File Upload Section - Show when occupation is selected */}
+          {/* Upload Mode Toggle */}
+          {selectedButton && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="mt-8 flex justify-center"
+            >
+              <div className="bg-white rounded-lg p-1 border border-gray-200 shadow-sm">
+                <button
+                  onClick={() => setUseSecureUpload(true)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    useSecureUpload 
+                      ? 'bg-blue-500 text-white shadow-md' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  🔒 Secure Upload (Recommended)
+                </button>
+                <button
+                  onClick={() => setUseSecureUpload(false)}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    !useSecureUpload 
+                      ? 'bg-orange-500 text-white shadow-md' 
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  ⚡ Quick Upload (Legacy)
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Secure Upload Section */}
           <AnimatePresence mode="wait">
-            {selectedButton && (
+            {selectedButton && useSecureUpload && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -30 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="mt-8 w-full max-w-6xl mx-auto"
+              >
+                <SecureFileUpload
+                  clientType={selectedButton}
+                  onUploadComplete={handleSecureUploadComplete}
+                  onAccessGranted={handleAccessGranted}
+                  externalFiles={Object.values(assignedFiles)}
+                />
+                
+                {/* Analyze Button for Secure Upload */}
+                {isAccessGranted && processingKey && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-6 text-center"
+                  >
+                    <Button
+                      onClick={handleSecureAnalyze}
+                      disabled={loading}
+                      className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-8 rounded-lg transition-all duration-200 disabled:opacity-50 text-lg"
+                    >
+                      {loading ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          <span>Analyzing Securely...</span>
+                        </div>
+                      ) : (
+                        "🔍 Start Secure Analysis"
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Legacy Quick Upload Section */}
+          <AnimatePresence mode="wait">
+            {selectedButton && !useSecureUpload && (
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -213,11 +367,16 @@ export default function Home() {
                 <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 shadow-lg">
                   <div className="text-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800 mb-2">
-                      🚀 Quick Upload for {selectedButton.charAt(0).toUpperCase() + selectedButton.slice(1).replace('-', ' ')}
+                      ⚡ Quick Upload for {selectedButton.charAt(0).toUpperCase() + selectedButton.slice(1).replace('-', ' ')}
                     </h3>
                     <p className="text-sm text-gray-600">
                       Upload all your documents at once for instant analysis
                     </p>
+                    <div className="mt-2 p-2 bg-orange-100 rounded-md">
+                      <p className="text-xs text-orange-700">
+                        ⚠️ Legacy mode - Files are processed directly without encryption
+                      </p>
+                    </div>
                   </div>
                   
                   <div className="flex flex-col items-center space-y-4">
@@ -245,7 +404,7 @@ export default function Home() {
                         </div>
                         
                         <Button
-                          onClick={handleUpload}
+                          onClick={handleLegacyUpload}
                           disabled={loading}
                           className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50"
                         >
@@ -325,16 +484,17 @@ export default function Home() {
                   />
                 </motion.div>
 
-                {/* Upload Progress Section */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.5 }}
-                >
-                  {documentConfig.options.length > 0 && (
-                    <div className="mt-4 sm:mt-6 w-full max-w-4xl mx-auto">
-                      <div className="bg-amber-100/10 rounded-lg p-3 sm:p-4 border border-amber-300 shadow-md shadow-amber-200">
-                        <h3 className="font-semibold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">📊 Upload Progress</h3>
+                {/* Upload Progress Section (legacy only) */}
+                {!useSecureUpload && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6, duration: 0.5 }}
+                  >
+                    {documentConfig.options.length > 0 && (
+                      <div className="mt-4 sm:mt-6 w-full max-w-4xl mx-auto">
+                        <div className="bg-amber-100/10 rounded-lg p-3 sm:p-4 border border-amber-300 shadow-md shadow-amber-200">
+                          <h3 className="font-semibold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">📊 Upload Progress</h3>
                     
                     {/* Required Documents Progress */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs sm:text-sm mb-3 gap-2 sm:gap-0">
@@ -377,65 +537,68 @@ export default function Home() {
                         </div>
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
-
-                  {/* Upload Button Section */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.8, duration: 0.5 }}
-                    className="flex justify-center mt-4 sm:mt-6 w-full max-w-4xl mx-auto"
-                  >
-                    <div className="text-center">
-                      {/* Status Message */}
-                      <div className="mb-3 sm:mb-4">
-                        {documentConfig.options.length > 0 && (
-                          <div className="text-xs sm:text-sm text-gray-600 mb-2 px-2 sm:px-0">
-                            {documentConfig.options.filter(doc => assignedFiles[doc]).length === documentConfig.options.length ? (
-                              <span className="text-green-600 font-medium">
-                                ✅ All required documents uploaded! 
-                                {documentConfig.relatedDocs && documentConfig.relatedDocs.filter(doc => assignedFiles[doc]).length > 0 && 
-                                  ` (+${documentConfig.relatedDocs.filter(doc => assignedFiles[doc]).length} optional)`
-                                }
-                              </span>
-                            ) : (
-                              <span className="text-amber-600 font-medium">
-                                ⚠️ {documentConfig.options.length - documentConfig.options.filter(doc => assignedFiles[doc]).length} required document{documentConfig.options.length - documentConfig.options.filter(doc => assignedFiles[doc]).length !== 1 ? 's' : ''} remaining
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        </div>
                       </div>
-
-                      <Button
-                        onClick={handleUpload}
-                        disabled={loading || documentConfig.options.filter(doc => assignedFiles[doc]).length !== documentConfig.options.length}
-                        className="cursor-pointer bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-2 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors text-sm sm:text-lg w-full sm:w-auto"
-                      >
-                        {loading ? (
-                          <div className="flex items-center justify-center space-x-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            <span>Analyzing Documents...</span>
-                          </div>
-                        ) : (
-                          `🔍 Analyze ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? 's' : ''}`
-                        )}
-                      </Button>
-
-                      {/* Upload Info */}
-                      <div className="mt-2 sm:mt-3 text-xs text-gray-500 px-2 sm:px-0">
-                        {documentConfig.options.length > 0 && documentConfig.options.filter(doc => assignedFiles[doc]).length !== documentConfig.options.length ? (
-                          "Upload all required documents to proceed with analysis"
-                        ) : (
-                          "Ready for analysis! Optional documents will be included automatically."
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </motion.div>
+                )}
+
+                  {/* Upload Button Section (legacy only) */}
+                  {!useSecureUpload && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.8, duration: 0.5 }}
+                      className="flex justify-center mt-4 sm:mt-6 w-full max-w-4xl mx-auto"
+                    >
+                      <div className="text-center">
+                        {/* Status Message */}
+                        <div className="mb-3 sm:mb-4">
+                          {documentConfig.options.length > 0 && (
+                            <div className="text-xs sm:text-sm text-gray-600 mb-2 px-2 sm:px-0">
+                              {documentConfig.options.filter(doc => assignedFiles[doc]).length === documentConfig.options.length ? (
+                                <span className="text-green-600 font-medium">
+                                  ✅ All required documents uploaded! 
+                                  {documentConfig.relatedDocs && documentConfig.relatedDocs.filter(doc => assignedFiles[doc]).length > 0 && 
+                                    ` (+${documentConfig.relatedDocs.filter(doc => assignedFiles[doc]).length} optional)`
+                                  }
+                                </span>
+                              ) : (
+                                <span className="text-amber-600 font-medium">
+                                  ⚠️ {documentConfig.options.length - documentConfig.options.filter(doc => assignedFiles[doc]).length} required document{documentConfig.options.length - documentConfig.options.filter(doc => assignedFiles[doc]).length !== 1 ? 's' : ''} remaining
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <Button
+                          onClick={handleLegacyUpload}
+                          disabled={loading || documentConfig.options.filter(doc => assignedFiles[doc]).length !== documentConfig.options.length}
+                          className="cursor-pointer bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-2 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors text-sm sm:text-lg w-full sm:w-auto"
+                        >
+                          {loading ? (
+                            <div className="flex items-center justify-center space-x-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Analyzing Documents...</span>
+                            </div>
+                          ) : (
+                            `🔍 Analyze ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? 's' : ''}`
+                          )}
+                        </Button>
+
+                        {/* Upload Info */}
+                        <div className="mt-2 sm:mt-3 text-xs text-gray-500 px-2 sm:px-0">
+                          {documentConfig.options.length > 0 && documentConfig.options.filter(doc => assignedFiles[doc]).length !== documentConfig.options.length ? (
+                            "Upload all required documents to proceed with analysis"
+                          ) : (
+                            "Ready for analysis! Optional documents will be included automatically."
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </motion.div>
-              </motion.div>
             )}
           </AnimatePresence>
           </div>
