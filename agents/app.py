@@ -28,9 +28,9 @@ app.include_router(itr_router)
 
 
 # Static files mounting - CA agent static files (primary)
-app.mount("/static", StaticFiles(directory="ca_agent/static"), name="static")
-# ITR agent static files on separate path
-app.mount("/itr-static", StaticFiles(directory="ITR_agent/static"), name="itr-static")
+# app.mount("/static", StaticFiles(directory="ca_agent/static"), name="static")
+# # ITR agent static files on separate path
+# app.mount("/itr-static", StaticFiles(directory="ITR_agent/static"), name="itr-static")
 
 # Include the pictorial analysis router
 app.include_router(pict_router, prefix="/api", tags=["pictorial"])
