@@ -261,8 +261,8 @@ async def extract_pictorial_data(request: MarkdownAnalysisRequest):
                 }
             ],
             model="llama-4-scout-17b-16e-instruct",
-            temperature=0.1,
-            max_tokens=8000
+            temperature=0.3,
+            max_tokens=15000
         )
         
         # Extract the response content
