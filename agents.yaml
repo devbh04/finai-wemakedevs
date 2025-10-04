@@ -1,0 +1,21 @@
+# agents.yaml
+# Definitions for simple Crew-style agents.
+
+agents:
+  parser:
+    description: "Parses markdown to extract income and expense items, totals, and approximate monthly cashflow."
+    entrypoint: "text_parsers.parse_markdown_income_expense"
+  preference_agent:
+    description: "Handles user preference for locality and budget."
+    entrypoint: "preference_agent.handle"
+  scraper:
+    description: "Searches and scrapes listing websites (99acres, magicpin) and/or uses Serper for discovery."
+    entrypoint: "scrapers.scrape_listings_for_locality"
+  filter_agent:
+    description: "Applies budget / locality filters and ranks by value score."
+    entrypoint: "filtering.rank_and_filter"
+
+# Optional meta for Crew runtime
+meta:
+  created_by: "Ananya"
+  last_updated: !!timestamp "2025-10-04T00:00:00Z"

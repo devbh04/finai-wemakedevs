@@ -1,0 +1,16 @@
+# tasks.yaml
+# Tasks map to named operations that the crew.py orchestrator will call.
+
+tasks:
+  parse_markdown:
+    description: "Parse uploaded markdown for incomes, expenses and compute monthly cashflow."
+    agent: "parser"
+  ask_user_pref:
+    description: "Obtain user's property locality preference & budget."
+    agent: "preference_agent"
+  scrape_listings:
+    description: "Scrape or search property listings for the provided locality and budget."
+    agent: "scraper"
+  filter_listings:
+    description: "Filter scraped listings by budget and locality; rank them."
+    agent: "filter_agent"
