@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, FileText, Calendar, User } from "lucide-react";
+import ReportDisplay from "@/components/markdown/ReportDisplay";
+import PictorialDashboard from "@/components/PictorialDashboard";
 
 interface AnalysisResult {
   task: string;
@@ -78,45 +80,19 @@ export default function CAReport() {
     );
   }
 
-  // Parse the result content to create a better display
-  const formatContent = (content: string) => {
-    // Split by lines and process
-    const lines = content.split('\n');
-    let formattedContent = '';
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      if (line.startsWith('#')) {
-        // Headers
-        const level = line.match(/^#+/)?.[0].length || 1;
-        const text = line.replace(/^#+\s*/, '');
-        formattedContent += `<h${level} class="text-${4-level}xl font-bold text-gray-800 mt-6 mb-3">${text}</h${level}>`;
-      } else if (line.startsWith('**') && line.endsWith('**')) {
-        // Bold text
-        const text = line.replace(/^\*\*|\*\*$/g, '');
-        formattedContent += `<p class="font-semibold text-gray-700 mt-2 mb-2">${text}</p>`;
-      } else if (line.startsWith('- ') || line.startsWith('* ')) {
-        // List items
-        const text = line.replace(/^[-*]\s/, '');
-        formattedContent += `<li class="ml-4 mb-1 text-gray-600">• ${text}</li>`;
-      } else if (line.length > 0) {
-        // Regular paragraphs
-        formattedContent += `<p class="text-gray-600 mb-3 leading-relaxed">${line}</p>`;
-      } else {
-        // Empty lines
-        formattedContent += '<br>';
-      }
-    }
-    
-    return formattedContent;
+  // Determine report type from task
+  const getReportType = (task: string): 'salaried' | 'business' | 'self-employed' => {
+    const taskLower = task.toLowerCase();
+    if (taskLower.includes('salaried')) return 'salaried';
+    if (taskLower.includes('business')) return 'business';
+    return 'self-employed';
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
       {/* Fixed Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-amber-200 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-amber-200 sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button 
@@ -147,55 +123,26 @@ export default function CAReport() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="bg-white rounded-xl shadow-lg border border-amber-200"
-        >
-          {/* Report Header */}
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-t-xl">
-            <div className="flex items-center space-x-3">
-              <FileText className="h-8 w-8" />
-              <div>
-                <h2 className="text-2xl font-bold">Financial Analysis Report</h2>
-                <p className="text-amber-100 flex items-center mt-1">
-                  <User className="h-4 w-4 mr-1" />
-                  Task: {analysisResult.task}
-                </p>
-              </div>
-            </div>
-          </div>
+      {/* Pictorial Dashboard */}
+      <PictorialDashboard 
+        markdownContent={analysisResult.markdown || analysisResult.result}
+        reportType={getReportType(analysisResult.task)}
+      />
 
-          {/* Report Content */}
-          <div className="p-6 sm:p-8 lg:p-10">
-            <div className="prose prose-lg max-w-none">
-              <div 
-                dangerouslySetInnerHTML={{ 
-                  __html: formatContent(analysisResult.result) 
-                }}
-                className="space-y-4"
-              />
-            </div>
-          </div>
+      {/* Enhanced Report Display */}
+      <ReportDisplay 
+        content={analysisResult.markdown || analysisResult.result}
+        reportType={getReportType(analysisResult.task)}
+        generatedDate={new Date().toLocaleDateString()}
+      />
 
-          {/* Report Footer */}
-          <div className="bg-gray-50 px-6 py-4 rounded-b-xl border-t border-gray-200">
-            <div className="text-center text-sm text-gray-500">
-              <p>This report was generated using AI analysis of your uploaded documents.</p>
-              <p className="mt-1">For professional advice, please consult with a qualified Chartered Accountant.</p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Additional Actions */}
+      {/* Action Buttons */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="mt-8 text-center"
+          className="text-center"
         >
           <div className="bg-white rounded-lg p-6 shadow-md border border-amber-200">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">What's Next?</h3>
@@ -214,6 +161,10 @@ export default function CAReport() {
                 <Download className="h-4 w-4 mr-2" />
                 Save Report
               </Button>
+            </div>
+            <div className="mt-4 text-sm text-gray-500">
+              <p>This report was generated using AI analysis of your uploaded documents.</p>
+              <p className="mt-1">For professional advice, please consult with a qualified Chartered Accountant.</p>
             </div>
           </div>
         </motion.div>
