@@ -1,6 +1,7 @@
 #ignore env and pycache
 venv/
 _pycache_/
+__pycache__/
 .env
 #ignore all type of .env files
 *.env
