@@ -7,3 +7,6 @@ crewai-tools
 PyPDF2
 pyyaml
 pathlib
+cryptography
+boto3
+python-dotenv

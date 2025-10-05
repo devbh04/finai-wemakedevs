@@ -6,10 +6,28 @@ interface FileData {
   fileName: string;
 }
 
+interface SecureSession {
+  upload_session_id: string;
+  access_token: string;
+}
+
+interface UploadedFile {
+  filename: string;
+  s3_key?: string;
+  encrypted: boolean;
+  error?: string;
+}
+
 interface FileUploadState {
   // File data indexed by option name
   files: { [optionName: string]: FileData };
   activeOption: string | null;
+  
+  // Secure upload state
+  secureSession: SecureSession | null;
+  uploadedFiles: UploadedFile[];
+  isAccessGranted: boolean;
+  processingKey: string | null;
   
   // Actions
   setActiveOption: (option: string | null) => void;
@@ -19,11 +37,23 @@ interface FileUploadState {
   getFileForOption: (optionName: string) => FileData | null;
   getPreviewUrlForOption: (optionName: string) => string | null;
   getAllAssignedOptions: () => string[];
+  
+  // Secure upload actions
+  setSecureSession: (session: SecureSession) => void;
+  setUploadedFiles: (files: UploadedFile[]) => void;
+  grantAccess: (processingKey: string) => void;
+  resetSecureState: () => void;
 }
 
 export const useFileUploadStore = create<FileUploadState>((set, get) => ({
   files: {},
   activeOption: null,
+  
+  // Secure upload state
+  secureSession: null,
+  uploadedFiles: [],
+  isAccessGranted: false,
+  processingKey: null,
 
   setActiveOption: (option) => set({ activeOption: option }),
 
@@ -85,5 +115,22 @@ export const useFileUploadStore = create<FileUploadState>((set, get) => ({
 
   getAllAssignedOptions: () => {
     return Object.keys(get().files);
-  }
+  },
+
+  // Secure upload actions
+  setSecureSession: (session) => set({ secureSession: session }),
+
+  setUploadedFiles: (files) => set({ uploadedFiles: files }),
+
+  grantAccess: (processingKey) => set({ 
+    isAccessGranted: true, 
+    processingKey 
+  }),
+
+  resetSecureState: () => set({
+    secureSession: null,
+    uploadedFiles: [],
+    isAccessGranted: false,
+    processingKey: null
+  })
 }));

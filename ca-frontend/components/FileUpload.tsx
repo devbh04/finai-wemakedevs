@@ -1,6 +1,6 @@
 "use client";
-import { useRef, useEffect } from "react";
-import { Upload, FileCheck2, Trash2 } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { Upload, FileCheck2, Trash2, Shield, Key } from "lucide-react";
 import { Button } from "./ui/button";
 import axios from "axios";
 import { useFileUploadStore } from "@/lib/store";
@@ -11,10 +11,33 @@ interface FileUploadProps {
     optionFileNames: string[];
     requiredDocs?: string[];
     optionalDocs?: string[];
+    enableEncryption?: boolean;
+    onEncryptedUploadComplete?: (sessionData: any) => void;
+    showGrantAccessButton?: boolean;
+    onGrantAccess?: () => void;
+    isGrantingAccess?: boolean;
 }
 
-export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames = [], requiredDocs = [], optionalDocs = [] }: FileUploadProps) {
+export default function FileUpload({ 
+    onFileAssign, 
+    onFileRemove, 
+    optionFileNames = [], 
+    requiredDocs = [], 
+    optionalDocs = [],
+    enableEncryption = false,
+    onEncryptedUploadComplete,
+    showGrantAccessButton = false,
+    onGrantAccess,
+    isGrantingAccess = false
+}: FileUploadProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // Local state for encryption flow
+    const [encryptionMode, setEncryptionMode] = useState(false);
+    const [encryptedFiles, setEncryptedFiles] = useState<{[key: string]: boolean}>({});
+    const [uploadSession, setUploadSession] = useState<any>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [showGrantAccess, setShowGrantAccess] = useState(false);
     
     // Zustand store hooks
     const {
@@ -25,23 +48,129 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
         removeFile,
         getFileForOption,
         getPreviewUrlForOption,
-        getAllAssignedOptions
+        getAllAssignedOptions,
+        secureSession,
+        uploadedFiles,
+        isAccessGranted,
+        setSecureSession,
+        setUploadedFiles,
+        grantAccess,
+        resetSecureState
     } = useFileUploadStore();
 
-    const processNewFile = (file: File) => {
+    const processNewFile = async (file: File) => {
         if (!activeOption) {
             alert("Please select an option first before uploading.");
             return;
         }
 
         if (file && (file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg")) {
-            // Add file to Zustand store
-            addFile(activeOption, file);
-            
-            // Notify parent component
-            onFileAssign(activeOption, file);
+            if (enableEncryption) {
+                await handleEncryptedUpload(file);
+            } else {
+                // Regular file upload
+                addFile(activeOption, file);
+                onFileAssign(activeOption, file);
+            }
         } else {
             alert("Please select a valid PDF, JPG, or PNG file.");
+        }
+    };
+
+    const handleEncryptedUpload = async (file: File) => {
+        if (!activeOption) return;
+        
+        try {
+            setIsUploading(true);
+            
+            // Create upload session if not exists
+            let currentSession = uploadSession;
+            if (!currentSession) {
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+                const sessionResponse = await axios.post(`${apiUrl}/secure/session/create`);
+                currentSession = sessionResponse.data;
+                setUploadSession(currentSession);
+                setSecureSession(currentSession);
+            }
+
+            // Upload encrypted file
+            const formData = new FormData();
+            formData.append('files', file);
+
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+            const uploadResponse = await axios.post(
+                `${apiUrl}/secure/session/${currentSession.upload_session_id}/upload`,
+                formData,
+                {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    timeout: 120000,
+                }
+            );
+
+            // Mark file as encrypted and add to regular file store for preview
+            setEncryptedFiles(prev => ({ ...prev, [activeOption as string]: true }));
+            addFile(activeOption, file);
+            onFileAssign(activeOption, file);
+
+            // Update uploaded files list
+            const currentUploaded = uploadedFiles || [];
+            const newUploadedFiles = [
+                ...currentUploaded,
+                ...uploadResponse.data.files.map((f: any) => ({
+                    filename: f.filename,
+                    s3_key: f.s3_key,
+                    encrypted: true
+                }))
+            ];
+            setUploadedFiles(newUploadedFiles);
+
+            // Show grant access button if we have uploaded files
+            if (newUploadedFiles.length > 0) {
+                setShowGrantAccess(true);
+            }
+
+        } catch (error: any) {
+            console.error('Encrypted upload failed:', error);
+            alert(`Encrypted upload failed: ${error.response?.data?.detail || error.message}`);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleGrantAccess = async () => {
+        if (onGrantAccess) {
+            onGrantAccess();
+        } else if (!uploadSession?.access_token) {
+            alert('No upload session found');
+            return;
+        } else {
+            try {
+                const formData = new FormData();
+                formData.append('access_token', uploadSession.access_token);
+                formData.append('client_type', 'business'); // Default for now
+
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+                const grantResponse = await axios.post(
+                    `${apiUrl}/secure/session/${uploadSession.upload_session_id}/grant`,
+                    formData,
+                    {
+                        headers: { 'Content-Type': 'multipart/form-data' },
+                        timeout: 240000,
+                    }
+                );
+
+                // Grant access in store
+                grantAccess(grantResponse.data.processing_key);
+                
+                // Notify parent component with the complete analysis result
+                if (onEncryptedUploadComplete) {
+                    onEncryptedUploadComplete(grantResponse.data);
+                }
+
+            } catch (error: any) {
+                console.error('Grant access failed:', error);
+                alert(`Grant access failed: ${error.response?.data?.detail || error.message}`);
+            }
         }
     };
 
@@ -66,6 +195,15 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
     const handleUnassignFile = (optionName: string) => {
         // Remove from Zustand store
         removeFile(optionName);
+        
+        // Remove from encrypted files tracking
+        if (encryptedFiles[optionName]) {
+            setEncryptedFiles(prev => {
+                const newState = { ...prev };
+                delete newState[optionName];
+                return newState;
+            });
+        }
         
         // Notify parent component
         if (onFileRemove) {
@@ -120,6 +258,14 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
                                             {isAssigned && <FileCheck2 size={16} className="flex-shrink-0 sm:w-[18px] sm:h-[18px]" />}
                                         </div>
                                         <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                            {encryptedFiles[optionName] && (
+                                                <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium flex items-center gap-1 ${
+                                                    isAssigned ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'
+                                                }`}>
+                                                    <Shield size={10} />
+                                                    Encrypted
+                                                </span>
+                                            )}
                                             {isRequired && (
                                                 <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium ${
                                                     isAssigned ? 'bg-green-800 text-green-100' : 'bg-red-100 text-red-800'
@@ -178,15 +324,23 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
                                     )}
                                 </div>
                             </div>
-                            {assignedFileForActiveOption && (
-                                <button
-                                    onClick={() => handleUnassignFile(activeOption)}
-                                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs sm:text-sm font-medium self-end sm:self-auto"
-                                >
-                                    <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                                    <span className="hidden sm:inline">Remove</span>
-                                </button>
-                            )}
+                            <div className="flex items-center gap-2">
+                                {encryptedFiles[activeOption] && (
+                                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-lg">
+                                        <Shield size={12} />
+                                        <span className="text-xs font-medium">Encrypted</span>
+                                    </div>
+                                )}
+                                {assignedFileForActiveOption && (
+                                    <button
+                                        onClick={() => handleUnassignFile(activeOption)}
+                                        className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs sm:text-sm font-medium self-end sm:self-auto"
+                                    >
+                                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                                        <span className="hidden sm:inline">Remove</span>
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Main content area */}
@@ -328,17 +482,31 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
                                     </div>
                                 ) : (
                                     <div
-                                        className="w-full h-[280px] sm:h-[350px] lg:h-full lg:max-h-[calc(70vh-160px)] border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 p-4"
-                                        onClick={() => fileInputRef.current?.click()}
+                                        className={`w-full h-[280px] sm:h-[350px] lg:h-full lg:max-h-[calc(70vh-160px)] border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-all duration-200 p-4 ${
+                                            isUploading 
+                                                ? 'border-blue-300 bg-blue-50 text-blue-600 cursor-wait' 
+                                                : enableEncryption 
+                                                    ? 'border-blue-300 text-blue-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50'
+                                                    : 'border-gray-300 text-gray-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50'
+                                        }`}
+                                        onClick={() => !isUploading && fileInputRef.current?.click()}
                                         onDragOver={(e) => e.preventDefault()}
-                                        onDrop={handleDrop}
+                                        onDrop={!isUploading ? handleDrop : undefined}
                                     >
-                                        <Upload size={36} className="mx-auto mb-3 text-gray-400 sm:w-12 sm:h-12" />
+                                        {enableEncryption ? (
+                                            <Shield size={36} className="mx-auto mb-3 text-blue-400 sm:w-12 sm:h-12" />
+                                        ) : (
+                                            <Upload size={36} className="mx-auto mb-3 text-gray-400 sm:w-12 sm:h-12" />
+                                        )}
                                         <p className="font-medium text-center mb-2 text-sm sm:text-base px-2">
-                                            Upload document for: <span className="text-blue-600 font-semibold break-words">{activeOption}</span>
+                                            {enableEncryption ? "Secure upload" : "Upload document"} for: <span className="text-blue-600 font-semibold break-words">{activeOption}</span>
                                         </p>
-                                        <p className="text-xs sm:text-sm text-center mb-1">Click or drag & drop a file here</p>
-                                        <p className="text-xs text-center text-gray-400">Supported: PDF, JPG, PNG (max 10MB)</p>
+                                        <p className="text-xs sm:text-sm text-center mb-1">
+                                            {isUploading ? "Encrypting and uploading..." : "Click or drag & drop a file here"}
+                                        </p>
+                                        <p className="text-xs text-center text-gray-400">
+                                            {enableEncryption ? "Files will be encrypted before upload" : "Supported: PDF, JPG, PNG (max 10MB)"}
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -402,6 +570,12 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
                                                                 {file?.name || 'Unknown file'}
                                                             </p>
                                                             <div className="flex flex-wrap gap-1">
+                                                                {encryptedFiles[optionName] && (
+                                                                    <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium flex items-center gap-1">
+                                                                        <Shield size={10} />
+                                                                        Encrypted
+                                                                    </span>
+                                                                )}
                                                                 {requiredDocs.includes(optionName) && (
                                                                     <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
                                                                         Required

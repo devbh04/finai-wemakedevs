@@ -157,3 +157,45 @@ async def analyze_documents(
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@router.get("/reports")
+async def list_ca_reports():
+    """List all CA analysis reports"""
+    try:
+        reports_dir = Path("./ca_agent/markdown_files")
+        if not reports_dir.exists():
+            return JSONResponse(content={"reports": []})
+        
+        reports = []
+        for file_path in reports_dir.glob("*.md"):
+            reports.append({
+                "filename": file_path.name,
+                "created": file_path.stat().st_mtime,
+                "size": file_path.stat().st_size,
+                "path": str(file_path)
+            })
+        
+        return JSONResponse(content={
+            "reports": sorted(reports, key=lambda x: x["created"], reverse=True)
+        })
+        
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@router.get("/reports/{filename}")
+async def download_ca_report(filename: str):
+    """Download a specific CA report file"""  
+    try:
+        from fastapi.responses import FileResponse
+        report_path = Path("./ca_agent/markdown_files") / filename
+        if not report_path.exists():
+            return JSONResponse(content={"error": "Report not found"}, status_code=404)
+        
+        return FileResponse(
+            path=str(report_path),
+            filename=filename,
+            media_type="text/markdown"
+        )
+        
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
