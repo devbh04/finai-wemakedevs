@@ -13,6 +13,7 @@ import { ChevronRight } from "lucide-react";
 import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 import { cn } from "@/lib/utils";
 import { Highlighter } from "@/components/ui/highlighter";
+import ITRHelperButton from "@/components/itr-helper/ITRHelperButton";
 
 export default function Home() {
   const texts = [
@@ -640,6 +641,9 @@ export default function Home() {
           </AnimatePresence>
         </div>
       </div>
+      
+      {/* ITR Helper Button - Fixed position */}
+      <ITRHelperButton />
     </div>
   );
 }

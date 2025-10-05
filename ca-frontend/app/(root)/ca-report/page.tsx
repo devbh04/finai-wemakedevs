@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, FileText, Calendar, User } from "lucide-react";
 import ReportDisplay from "@/components/markdown/ReportDisplay";
 import PictorialDashboard from "@/components/PictorialDashboard";
+import ITRHelperButton from "@/components/itr-helper/ITRHelperButton";
 
 interface AnalysisResult {
   task: string;
@@ -168,6 +169,11 @@ export default function CAReport() {
             </div>
           </div>
         </motion.div>
+      </div>
+      
+      {/* ITR Helper Button - Fixed bottom left */}
+      <div >
+        <ITRHelperButton />
       </div>
     </div>
   );

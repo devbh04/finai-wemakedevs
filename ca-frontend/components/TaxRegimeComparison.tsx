@@ -89,7 +89,7 @@ export default function TaxRegimeComparison({ data, className = "" }: TaxRegimeC
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Final Amount</p>
-                    <p className={`text-lg font-bold ${data.old_regime.final_amount.includes('Refund') ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`text-lg font-bold ${data.old_regime.final_amount.includes('Refundale') ? 'text-green-600' : 'text-red-600'}`}>
                       {data.old_regime.final_amount}
                     </p>
                   </div>

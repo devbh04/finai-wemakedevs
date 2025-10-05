@@ -56,6 +56,37 @@ interface AssetBreakdownProps {
 }
 
 export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBreakdownProps) {
+  // Add safety check for data structure
+  if (!data || typeof data !== 'object') {
+    return (
+      <div className={`w-full p-6 ${className}`}>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-gray-500">
+              <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No asset breakdown data available</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Safe data access with fallbacks
+  const safeTotalAssets = data.total_assets || 0;
+  const safeAssetCategories = data.asset_categories || [];
+  const safeLiquidityAnalysis = data.liquidity_analysis || {
+    highly_liquid: 0,
+    moderately_liquid: 0,
+    illiquid: 0
+  };
+  const safeAssetEfficiency = data.asset_efficiency || {
+    asset_turnover: 0,
+    roa: 0,
+    asset_utilization: 0
+  };
+  const safeInvestmentRecommendations = data.investment_recommendations || [];
+
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -167,7 +198,7 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Total Assets</p>
                       <p className="text-2xl font-bold text-indigo-600">
-                        {formatCurrency(data.total_assets)}
+                        {formatCurrency(safeTotalAssets)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Portfolio Value</p>
                     </div>
@@ -178,11 +209,11 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                   <CardContent className="p-4">
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Asset Turnover</p>
-                      <p className={`text-2xl font-bold ${getEfficiencyScore(data.asset_efficiency.asset_turnover, 'turnover').color}`}>
-                        {data.asset_efficiency.asset_turnover.toFixed(2)}×
+                      <p className={`text-2xl font-bold ${getEfficiencyScore(safeAssetEfficiency.asset_turnover, 'turnover').color}`}>
+                        {safeAssetEfficiency.asset_turnover.toFixed(2)}×
                       </p>
-                      <Badge className={getEfficiencyScore(data.asset_efficiency.asset_turnover, 'turnover').color + ' bg-opacity-10'}>
-                        {getEfficiencyScore(data.asset_efficiency.asset_turnover, 'turnover').text}
+                      <Badge className={getEfficiencyScore(safeAssetEfficiency.asset_turnover, 'turnover').color + ' bg-opacity-10'}>
+                        {getEfficiencyScore(safeAssetEfficiency.asset_turnover, 'turnover').text}
                       </Badge>
                     </div>
                   </CardContent>
@@ -192,11 +223,11 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                   <CardContent className="p-4">
                     <div className="text-center">
                       <p className="text-sm text-gray-600">ROA</p>
-                      <p className={`text-2xl font-bold ${getEfficiencyScore(data.asset_efficiency.roa, 'roa').color}`}>
-                        {data.asset_efficiency.roa.toFixed(1)}%
+                      <p className={`text-2xl font-bold ${getEfficiencyScore(safeAssetEfficiency.roa, 'roa').color}`}>
+                        {safeAssetEfficiency.roa.toFixed(1)}%
                       </p>
-                      <Badge className={getEfficiencyScore(data.asset_efficiency.roa, 'roa').color + ' bg-opacity-10'}>
-                        {getEfficiencyScore(data.asset_efficiency.roa, 'roa').text}
+                      <Badge className={getEfficiencyScore(safeAssetEfficiency.roa, 'roa').color + ' bg-opacity-10'}>
+                        {getEfficiencyScore(safeAssetEfficiency.roa, 'roa').text}
                       </Badge>
                     </div>
                   </CardContent>
@@ -206,11 +237,11 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                   <CardContent className="p-4">
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Utilization</p>
-                      <p className={`text-2xl font-bold ${getEfficiencyScore(data.asset_efficiency.asset_utilization, 'utilization').color}`}>
-                        {data.asset_efficiency.asset_utilization.toFixed(1)}%
+                      <p className={`text-2xl font-bold ${getEfficiencyScore(safeAssetEfficiency.asset_utilization, 'utilization').color}`}>
+                        {safeAssetEfficiency.asset_utilization.toFixed(1)}%
                       </p>
-                      <Badge className={getEfficiencyScore(data.asset_efficiency.asset_utilization, 'utilization').color + ' bg-opacity-10'}>
-                        {getEfficiencyScore(data.asset_efficiency.asset_utilization, 'utilization').text}
+                      <Badge className={getEfficiencyScore(safeAssetEfficiency.asset_utilization, 'utilization').color + ' bg-opacity-10'}>
+                        {getEfficiencyScore(safeAssetEfficiency.asset_utilization, 'utilization').text}
                       </Badge>
                     </div>
                   </CardContent>
@@ -231,10 +262,10 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                       <div>
                         <p className="text-sm text-gray-600">Highly Liquid</p>
                         <p className="text-xl font-bold text-green-600">
-                          {formatCurrency(data.liquidity_analysis.highly_liquid)}
+                          {formatCurrency(safeLiquidityAnalysis.highly_liquid)}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {((data.liquidity_analysis.highly_liquid / data.total_assets) * 100).toFixed(1)}% of total
+                          {safeTotalAssets > 0 ? ((safeLiquidityAnalysis.highly_liquid / safeTotalAssets) * 100).toFixed(1) : '0'}% of total
                         </p>
                       </div>
                       <div className="text-green-600">
@@ -250,10 +281,10 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                       <div>
                         <p className="text-sm text-gray-600">Moderately Liquid</p>
                         <p className="text-xl font-bold text-blue-600">
-                          {formatCurrency(data.liquidity_analysis.moderately_liquid)}
+                          {formatCurrency(safeLiquidityAnalysis.moderately_liquid)}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {((data.liquidity_analysis.moderately_liquid / data.total_assets) * 100).toFixed(1)}% of total
+                          {safeTotalAssets > 0 ? ((safeLiquidityAnalysis.moderately_liquid / safeTotalAssets) * 100).toFixed(1) : '0'}% of total
                         </p>
                       </div>
                       <div className="text-blue-600">
@@ -269,10 +300,10 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                       <div>
                         <p className="text-sm text-gray-600">Illiquid</p>
                         <p className="text-xl font-bold text-red-600">
-                          {formatCurrency(data.liquidity_analysis.illiquid)}
+                          {formatCurrency(safeLiquidityAnalysis.illiquid)}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {((data.liquidity_analysis.illiquid / data.total_assets) * 100).toFixed(1)}% of total
+                          {safeTotalAssets > 0 ? ((safeLiquidityAnalysis.illiquid / safeTotalAssets) * 100).toFixed(1) : '0'}% of total
                         </p>
                       </div>
                       <div className="text-red-600">
@@ -291,7 +322,7 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                 Asset Categories Analysis
               </h3>
               <div className="space-y-4">
-                {data.asset_categories.map((category, index) => (
+                {safeAssetCategories.map((category, index) => (
                   <motion.div
                     key={category.category}
                     initial={{ opacity: 0, x: -20 }}
@@ -309,7 +340,7 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                               <h4 className="font-semibold text-gray-800">{category.category}</h4>
                               <p className="text-sm text-gray-600">
                                 Total: {formatCurrency(category.total)} • 
-                                {((category.total / data.total_assets) * 100).toFixed(1)}% of portfolio
+                                {safeTotalAssets > 0 ? ((category.total / safeTotalAssets) * 100).toFixed(1) : '0'}% of portfolio
                               </p>
                             </div>
                           </div>
@@ -379,7 +410,7 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                 Investment Recommendations
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {data.investment_recommendations.map((rec, index) => (
+                {safeInvestmentRecommendations.map((rec, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
@@ -422,7 +453,7 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                 <div>
                   <p className="text-gray-700">
                     <strong>Liquidity Position:</strong> {
-                      ((data.liquidity_analysis.highly_liquid / data.total_assets) * 100) >= 30 ?
+                      safeTotalAssets > 0 && ((safeLiquidityAnalysis.highly_liquid / safeTotalAssets) * 100) >= 30 ?
                       'Strong liquidity with good cash availability' :
                       'Consider improving liquid asset allocation'
                     }
@@ -431,7 +462,7 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
                 <div>
                   <p className="text-gray-700">
                     <strong>Asset Efficiency:</strong> {
-                      data.asset_efficiency.asset_turnover >= 1.5 ?
+                      safeAssetEfficiency.asset_turnover >= 1.5 ?
                       'Efficient asset utilization generating good returns' :
                       'Focus on improving asset productivity and turnover'
                     }
@@ -441,9 +472,9 @@ export default function AssetBreakdownAnalysis({ data, className = "" }: AssetBr
               <div className="mt-3 p-3 bg-white rounded border border-indigo-100">
                 <p className="text-xs text-gray-600">
                   💡 <strong>Strategic Focus:</strong> {
-                    data.asset_efficiency.roa >= 10 ?
+                    safeAssetEfficiency.roa >= 10 ?
                     'Maintain current asset allocation strategy and explore growth opportunities' :
-                    data.asset_efficiency.asset_utilization >= 60 ?
+                    safeAssetEfficiency.asset_utilization >= 60 ?
                     'Optimize asset mix to improve returns while maintaining liquidity' :
                     'Comprehensive asset restructuring needed to improve efficiency and returns'
                   }

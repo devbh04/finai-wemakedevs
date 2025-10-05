@@ -302,6 +302,125 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
     extractPictorialData();
   }, [markdownContent, reportType]);
 
+  // Helper function to get fallback data based on user type
+  const getFallbackDataByUserType = (userType: string): PictorialData => {
+    const baseData: PictorialData = {
+      key_metrics: [
+        {
+          title: "Total Income",
+          value: "₹0",
+          unit: "",
+          trend: 'stable' as const,
+          color: 'green' as const,
+          icon: 'dollar' as const,
+          description: "Annual income from all sources"
+        }
+      ],
+      charts_data: [
+        {
+          type: 'pie' as const,
+          title: 'Sample Distribution',
+          data: {
+            labels: ['Category A', 'Category B', 'Category C'],
+            values: [1, 1, 1]
+          },
+          color_scheme: 'blue',
+          description: 'Sample chart showing data distribution',
+          insights: ['Sample insight for demonstration']
+        }
+      ],
+      highlights: [
+        {
+          type: 'info' as const,
+          title: 'Dashboard Ready',
+          message: 'Components will populate with your CA report data',
+          icon: 'check'
+        }
+      ],
+      risk_alerts: [],
+      compliance_status: [],
+      timeline_events: [],
+      recommendations: [],
+      benchmark_analysis: [],
+      expense_breakdown: [],
+      income_sources: []
+    };
+
+    switch (userType.toLowerCase()) {
+      case 'salaried':
+        return {
+          ...baseData,
+          tax_regime_comparison: {
+            old_regime: {
+              taxable_income: "₹0",
+              tax_liability: "₹0",
+              effective_rate: "0%",
+              deductions_used: [],
+              final_amount: "₹0"
+            },
+            new_regime: {
+              taxable_income: "₹0",
+              tax_liability: "₹0",
+              effective_rate: "0%",
+              deductions_used: [],
+              final_amount: "₹0"
+            },
+            recommendation: 'new' as const,
+            savings_amount: "₹0",
+            savings_percentage: "0%"
+          }
+        };
+
+      case 'self_employed':
+      case 'business':
+      case 'corporate':
+        return {
+          ...baseData,
+          financial_health_score: {
+            overall_score: 0,
+            categories: [
+              { category: 'profitability' as const, score: 0, status: 'average' as const, key_indicator: 'Revenue growth' },
+              { category: 'liquidity' as const, score: 0, status: 'average' as const, key_indicator: 'Current ratio' },
+              { category: 'solvency' as const, score: 0, status: 'average' as const, key_indicator: 'Debt to equity' },
+              { category: 'efficiency' as const, score: 0, status: 'average' as const, key_indicator: 'Asset turnover' }
+            ]
+          },
+          business_kpis: {
+            revenue_growth: { value: "0%", trend: 'stable' as const, period: "Annual" },
+            profit_margins: { gross: 0, ebitda: 0, net: 0 },
+            efficiency_ratios: { inventory_turnover: 0, receivables_turnover: 0, asset_turnover: 0 },
+            liquidity_ratios: { current_ratio: 0, quick_ratio: 0, cash_ratio: 0 },
+            leverage_ratios: { debt_to_equity: 0, interest_coverage: 0, debt_service_coverage: 0 }
+          },
+          quarterly_performance: {
+            Q1: { revenue: 0, expenses: 0, profit: 0, margin: 0, growth: 0 },
+            Q2: { revenue: 0, expenses: 0, profit: 0, margin: 0, growth: 0 },
+            Q3: { revenue: 0, expenses: 0, profit: 0, margin: 0, growth: 0 },
+            Q4: { revenue: 0, expenses: 0, profit: 0, margin: 0, growth: 0 },
+            year_over_year: { revenue_growth: 0, profit_growth: 0, margin_improvement: 0 },
+            seasonality_patterns: { peak_quarter: 'Q4', weak_quarter: 'Q1', seasonal_variance: 0 }
+          },
+          cost_structure: {
+            total_costs: 0,
+            cost_breakdown: [],
+            cost_efficiency_score: 0,
+            optimization_opportunities: { immediate: [], medium_term: [], long_term: [] },
+            benchmark_comparison: { industry_average: 0, position: 'average' as const }
+          },
+          asset_breakdown: {
+            total_assets: 0,
+            asset_categories: [],
+            liquidity_analysis: { highly_liquid: 0, moderately_liquid: 0, illiquid: 0 },
+            asset_efficiency: { asset_turnover: 0, roa: 0, asset_utilization: 0 },
+            investment_recommendations: []
+          }
+        };
+
+      default:
+        return baseData;
+    }
+  };
+
   const extractPictorialData = async () => {
     try {
       setLoading(true);
@@ -323,9 +442,18 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
       }
 
       const pictorialData = await response.json();
-      setData(pictorialData);
+      
+      // Merge API data with fallback data to ensure all components have data
+      const fallbackData = getFallbackDataByUserType(reportType);
+      const mergedData = { ...fallbackData, ...pictorialData };
+      
+      setData(mergedData);
     } catch (err) {
       console.error('Error extracting pictorial data:', err);
+      
+      // Even on error, provide fallback data so components can still render
+      const fallbackData = getFallbackDataByUserType(reportType);
+      setData(fallbackData);
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
     } finally {
       setLoading(false);
@@ -470,8 +598,30 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
               transition={{ duration: 0.5 }}
               className="space-y-8"
             >
+              {/* Demo Mode Alert */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6"
+                >
+                  <Card className="border-amber-200 bg-amber-50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <Lightbulb className="h-5 w-5 text-amber-600" />
+                        <div>
+                          <h4 className="font-semibold text-amber-800">Demo Mode Active</h4>
+                          <p className="text-sm text-amber-700">
+                            Showing dashboard preview with sample data. Components will populate with real data when analysis completes.
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
               {/* Tax Regime Comparison - For Salaried */}
-              {data.tax_regime_comparison && (
+              {reportType.toLowerCase() === 'salaried' && data.tax_regime_comparison && (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -481,8 +631,8 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
                 </motion.section>
               )}
 
-              {/* Financial Health Score - For Business */}
-              {data.financial_health_score && (
+              {/* Financial Health Score - For Business/Self-Employed */}
+              {(['self_employed', 'business', 'corporate'].includes(reportType.toLowerCase())) && data.financial_health_score && (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -508,7 +658,7 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
               )}
 
               {/* Business-Specific Professional Components */}
-              {data.business_kpis && (
+              {(['self_employed', 'business', 'corporate'].includes(reportType.toLowerCase())) && data.business_kpis && (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -518,7 +668,7 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
                 </motion.section>
               )}
 
-              {data.quarterly_performance && (
+              {(['self_employed', 'business', 'corporate'].includes(reportType.toLowerCase())) && data.quarterly_performance && (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -528,7 +678,7 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
                 </motion.section>
               )}
 
-              {data.cost_structure && (
+              {(['self_employed', 'business', 'corporate'].includes(reportType.toLowerCase())) && data.cost_structure && (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -538,7 +688,7 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
                 </motion.section>
               )}
 
-              {data.asset_breakdown && (
+              {(['self_employed', 'business', 'corporate'].includes(reportType.toLowerCase())) && data.asset_breakdown && (
                 <motion.section
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}

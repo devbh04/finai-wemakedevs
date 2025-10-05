@@ -47,6 +47,36 @@ interface CostStructureProps {
 }
 
 export default function CostStructureAnalysis({ data, className = "" }: CostStructureProps) {
+  // Add safety check for data structure
+  if (!data || typeof data !== 'object') {
+    return (
+      <div className={`w-full p-6 ${className}`}>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-gray-500">
+              <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No cost structure data available</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Safe data access with fallbacks
+  const safeCostBreakdown = data.cost_breakdown || [];
+  const safeTotalCosts = data.total_costs || 0;
+  const safeCostEfficiencyScore = data.cost_efficiency_score || 0;
+  const safeOptimizationOpportunities = data.optimization_opportunities || {
+    immediate: [],
+    medium_term: [],
+    long_term: []
+  };
+  const safeBenchmarkComparison = data.benchmark_comparison || {
+    industry_average: 0,
+    position: 'average' as const
+  };
+
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -88,7 +118,7 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
     return 'text-green-600';
   };
 
-  const totalOptimizationPotential = data.cost_breakdown.reduce((sum, category) => 
+  const totalOptimizationPotential = safeCostBreakdown.reduce((sum, category) => 
     sum + (category.amount * category.optimization_potential / 100), 0
   );
 
@@ -122,7 +152,7 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Total Costs</p>
                       <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(data.total_costs)}
+                        {formatCurrency(safeTotalCosts)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Annual</p>
                     </div>
@@ -133,11 +163,11 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                   <CardContent className="p-4">
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Efficiency Score</p>
-                      <p className={`text-2xl font-bold ${getEfficiencyScore(data.cost_efficiency_score).color}`}>
-                        {data.cost_efficiency_score}/100
+                      <p className={`text-2xl font-bold ${getEfficiencyScore(safeCostEfficiencyScore).color}`}>
+                        {safeCostEfficiencyScore}/100
                       </p>
-                      <Badge className={getEfficiencyScore(data.cost_efficiency_score).bg + ' ' + getEfficiencyScore(data.cost_efficiency_score).color}>
-                        {getEfficiencyScore(data.cost_efficiency_score).text}
+                      <Badge className={getEfficiencyScore(safeCostEfficiencyScore).bg + ' ' + getEfficiencyScore(safeCostEfficiencyScore).color}>
+                        {getEfficiencyScore(safeCostEfficiencyScore).text}
                       </Badge>
                     </div>
                   </CardContent>
@@ -151,7 +181,7 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                         {formatCurrency(totalOptimizationPotential)}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {((totalOptimizationPotential / data.total_costs) * 100).toFixed(1)}% of total
+                        {safeTotalCosts > 0 ? ((totalOptimizationPotential / safeTotalCosts) * 100).toFixed(1) : '0'}% of total
                       </p>
                     </div>
                   </CardContent>
@@ -162,15 +192,15 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                     <div className="text-center">
                       <p className="text-sm text-gray-600">Industry Position</p>
                       <p className="text-2xl font-bold text-purple-600">
-                        {data.benchmark_comparison.position === 'better' ? '👍' : 
-                         data.benchmark_comparison.position === 'average' ? '😐' : '👎'}
+                        {safeBenchmarkComparison.position === 'better' ? '👍' : 
+                         safeBenchmarkComparison.position === 'average' ? '😐' : '👎'}
                       </p>
                       <Badge className={
-                        data.benchmark_comparison.position === 'better' ? 'bg-green-100 text-green-800' :
-                        data.benchmark_comparison.position === 'average' ? 'bg-blue-100 text-blue-800' :
+                        safeBenchmarkComparison.position === 'better' ? 'bg-green-100 text-green-800' :
+                        safeBenchmarkComparison.position === 'average' ? 'bg-blue-100 text-blue-800' :
                         'bg-red-100 text-red-800'
                       }>
-                        {data.benchmark_comparison.position.replace('_', ' ')}
+                        {safeBenchmarkComparison.position.replace('_', ' ')}
                       </Badge>
                     </div>
                   </CardContent>
@@ -185,7 +215,7 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                 Detailed Cost Breakdown
               </h3>
               <div className="space-y-4">
-                {data.cost_breakdown.map((category, index) => (
+                {safeCostBreakdown.map((category, index) => (
                   <motion.div
                     key={category.category}
                     initial={{ opacity: 0, x: -20 }}
@@ -266,9 +296,9 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    {data.optimization_opportunities.immediate.length > 0 ? (
+                    {safeOptimizationOpportunities.immediate.length > 0 ? (
                       <div className="space-y-3">
-                        {data.optimization_opportunities.immediate.map((item, idx) => (
+                        {safeOptimizationOpportunities.immediate.map((item, idx) => (
                           <div key={idx} className="p-3 bg-white rounded border border-red-100">
                             <p className="font-semibold text-sm text-gray-800">{item.category}</p>
                             <p className="text-xs text-gray-600">
@@ -292,9 +322,9 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    {data.optimization_opportunities.medium_term.length > 0 ? (
+                    {safeOptimizationOpportunities.medium_term.length > 0 ? (
                       <div className="space-y-3">
-                        {data.optimization_opportunities.medium_term.map((item, idx) => (
+                        {safeOptimizationOpportunities.medium_term.map((item, idx) => (
                           <div key={idx} className="p-3 bg-white rounded border border-orange-100">
                             <p className="font-semibold text-sm text-gray-800">{item.category}</p>
                             <p className="text-xs text-gray-600">
@@ -318,9 +348,9 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    {data.optimization_opportunities.long_term.length > 0 ? (
+                    {safeOptimizationOpportunities.long_term.length > 0 ? (
                       <div className="space-y-3">
-                        {data.optimization_opportunities.long_term.map((item, idx) => (
+                        {safeOptimizationOpportunities.long_term.map((item, idx) => (
                           <div key={idx} className="p-3 bg-white rounded border border-green-100">
                             <p className="font-semibold text-sm text-gray-800">{item.category}</p>
                             <p className="text-xs text-gray-600">
@@ -352,15 +382,15 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
                 <div>
                   <p className="text-gray-700">
                     <strong>Priority Focus:</strong> {
-                      data.cost_breakdown.find(c => c.priority === 'high')?.category ||
-                      data.cost_breakdown[0]?.category || 'Cost efficiency'
+                      safeCostBreakdown.find(c => c.priority === 'high')?.category ||
+                      safeCostBreakdown[0]?.category || 'Cost efficiency'
                     } requires immediate attention for maximum impact
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-700">
                     <strong>Optimization Potential:</strong> {
-                      ((totalOptimizationPotential / data.total_costs) * 100).toFixed(1)
+                      safeTotalCosts > 0 ? ((totalOptimizationPotential / safeTotalCosts) * 100).toFixed(1) : '0'
                     }% cost reduction possible through strategic initiatives
                   </p>
                 </div>
@@ -368,9 +398,9 @@ export default function CostStructureAnalysis({ data, className = "" }: CostStru
               <div className="mt-3 p-3 bg-white rounded border border-green-100">
                 <p className="text-xs text-gray-600">
                   💡 <strong>Strategic Recommendation:</strong> {
-                    data.cost_efficiency_score >= 75 ?
+                    safeCostEfficiencyScore >= 75 ?
                     'Maintain current efficiency levels and focus on innovation investments' :
-                    data.cost_efficiency_score >= 60 ?
+                    safeCostEfficiencyScore >= 60 ?
                     'Implement medium-term optimization strategies for improved efficiency' :
                     'Urgent cost restructuring required - prioritize immediate optimization opportunities'
                   }

@@ -50,6 +50,36 @@ interface QuarterlyDashboardProps {
 export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDashboardProps) {
   const quarters = ['Q1', 'Q2', 'Q3', 'Q4'] as const;
   
+  // Add safety check for data structure
+  if (!data || typeof data !== 'object') {
+    return (
+      <div className={`w-full p-6 ${className}`}>
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center text-gray-500">
+              <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No quarterly performance data available</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Safe year-over-year data
+  const yearOverYearData = data.year_over_year || {
+    revenue_growth: 0,
+    profit_growth: 0,
+    margin_improvement: 0
+  };
+
+  // Safe seasonality patterns data
+  const seasonalityData = data.seasonality_patterns || {
+    peak_quarter: 'Q4',
+    weak_quarter: 'Q1',
+    seasonal_variance: 0
+  };
+  
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -79,8 +109,28 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
     return { text: 'Below Par', color: 'bg-red-100 text-red-800' };
   };
 
-  const maxRevenue = Math.max(...quarters.map(q => data[q].revenue));
-  const minRevenue = Math.min(...quarters.map(q => data[q].revenue));
+  // Safe access to quarterly data with fallbacks
+  // Safe data access helper function
+  const getQuarterData = (quarter: 'Q1' | 'Q2' | 'Q3' | 'Q4'): QuarterData => {
+    const quarterData = data[quarter];
+    return quarterData || {
+      revenue: 0,
+      expenses: 0,
+      profit: 0,
+      margin: 0,
+      growth: 0
+    };
+  };
+
+  const validQuarters = quarters.filter(q => {
+    const quarterData = data[q];
+    return quarterData && typeof quarterData === 'object' && 'revenue' in quarterData;
+  });
+  
+  const revenues = validQuarters.map(q => getQuarterData(q).revenue).filter(r => typeof r === 'number' && !isNaN(r));
+  
+  const maxRevenue = revenues.length > 0 ? Math.max(...revenues) : 0;
+  const minRevenue = revenues.length > 0 ? Math.min(...revenues) : 0;
 
   return (
     <div className={`w-full space-y-6 ${className}`}>
@@ -113,12 +163,12 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
                       <div>
                         <p className="text-sm text-gray-600">Revenue Growth</p>
                         <p className="text-2xl font-bold text-blue-600">
-                          {data.year_over_year.revenue_growth > 0 ? '+' : ''}{data.year_over_year.revenue_growth.toFixed(1)}%
+                          {yearOverYearData.revenue_growth > 0 ? '+' : ''}{yearOverYearData.revenue_growth.toFixed(1)}%
                         </p>
                         <p className="text-xs text-gray-500">Year-over-Year</p>
                       </div>
-                      <div className={`p-2 rounded-full ${getGrowthColor(data.year_over_year.revenue_growth)}`}>
-                        {React.createElement(getGrowthIcon(data.year_over_year.revenue_growth), { className: "h-6 w-6" })}
+                      <div className={`p-2 rounded-full ${getGrowthColor(yearOverYearData.revenue_growth)}`}>
+                        {React.createElement(getGrowthIcon(yearOverYearData.revenue_growth), { className: "h-6 w-6" })}
                       </div>
                     </div>
                   </CardContent>
@@ -130,12 +180,12 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
                       <div>
                         <p className="text-sm text-gray-600">Profit Growth</p>
                         <p className="text-2xl font-bold text-green-600">
-                          {data.year_over_year.profit_growth > 0 ? '+' : ''}{data.year_over_year.profit_growth.toFixed(1)}%
+                          {yearOverYearData.profit_growth > 0 ? '+' : ''}{yearOverYearData.profit_growth.toFixed(1)}%
                         </p>
                         <p className="text-xs text-gray-500">Year-over-Year</p>
                       </div>
-                      <div className={`p-2 rounded-full ${getGrowthColor(data.year_over_year.profit_growth)}`}>
-                        {React.createElement(getGrowthIcon(data.year_over_year.profit_growth), { className: "h-6 w-6" })}
+                      <div className={`p-2 rounded-full ${getGrowthColor(yearOverYearData.profit_growth)}`}>
+                        {React.createElement(getGrowthIcon(yearOverYearData.profit_growth), { className: "h-6 w-6" })}
                       </div>
                     </div>
                   </CardContent>
@@ -147,12 +197,12 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
                       <div>
                         <p className="text-sm text-gray-600">Margin Change</p>
                         <p className="text-2xl font-bold text-purple-600">
-                          {data.year_over_year.margin_improvement > 0 ? '+' : ''}{data.year_over_year.margin_improvement.toFixed(1)}%
+                          {yearOverYearData.margin_improvement > 0 ? '+' : ''}{yearOverYearData.margin_improvement.toFixed(1)}%
                         </p>
                         <p className="text-xs text-gray-500">Points Change</p>
                       </div>
-                      <div className={`p-2 rounded-full ${getGrowthColor(data.year_over_year.margin_improvement)}`}>
-                        {React.createElement(getGrowthIcon(data.year_over_year.margin_improvement), { className: "h-6 w-6" })}
+                      <div className={`p-2 rounded-full ${getGrowthColor(yearOverYearData.margin_improvement)}`}>
+                        {React.createElement(getGrowthIcon(yearOverYearData.margin_improvement), { className: "h-6 w-6" })}
                       </div>
                     </div>
                   </CardContent>
@@ -168,9 +218,9 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
               </h3>
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
                 {quarters.map((quarter, index) => {
-                  const quarterData = data[quarter];
-                  const isHighest = quarterData.revenue === maxRevenue;
-                  const isLowest = quarterData.revenue === minRevenue;
+                  const quarterData = getQuarterData(quarter);
+                  const isHighest = quarterData.revenue === maxRevenue && maxRevenue > 0;
+                  const isLowest = quarterData.revenue === minRevenue && minRevenue > 0 && quarterData.revenue > 0;
                   
                   return (
                     <motion.div
@@ -256,7 +306,7 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
                       </div>
                       <h4 className="font-semibold text-gray-800">Peak Quarter</h4>
                       <p className="text-2xl font-bold text-green-600 mt-1">
-                        {data.seasonality_patterns.peak_quarter}
+                        {seasonalityData.peak_quarter}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Strongest Performance</p>
                     </div>
@@ -271,7 +321,7 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
                       </div>
                       <h4 className="font-semibold text-gray-800">Weak Quarter</h4>
                       <p className="text-2xl font-bold text-red-600 mt-1">
-                        {data.seasonality_patterns.weak_quarter}
+                        {seasonalityData.weak_quarter}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">Needs Attention</p>
                     </div>
@@ -286,10 +336,10 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
                       </div>
                       <h4 className="font-semibold text-gray-800">Variance</h4>
                       <p className="text-2xl font-bold text-blue-600 mt-1">
-                        {Math.abs(data.seasonality_patterns.seasonal_variance).toFixed(1)}%
+                        {Math.abs(seasonalityData.seasonal_variance).toFixed(1)}%
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        {data.seasonality_patterns.seasonal_variance < 15 ? 'Stable' : 'High Variation'}
+                        {seasonalityData.seasonal_variance < 15 ? 'Stable' : 'High Variation'}
                       </p>
                     </div>
                   </CardContent>
@@ -312,8 +362,8 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
                 <div>
                   <p className="text-gray-700">
                     <strong>Performance Trend:</strong> {
-                      data.year_over_year.revenue_growth > 10 ? 'Strong growth trajectory across quarters' :
-                      data.year_over_year.revenue_growth > 0 ? 'Steady improvement with growth potential' :
+                      yearOverYearData.revenue_growth > 10 ? 'Strong growth trajectory across quarters' :
+                      yearOverYearData.revenue_growth > 0 ? 'Steady improvement with growth potential' :
                       'Revenue challenges requiring strategic intervention'
                     }
                   </p>
@@ -321,9 +371,9 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
                 <div>
                   <p className="text-gray-700">
                     <strong>Seasonality Impact:</strong> {
-                      data.seasonality_patterns.seasonal_variance < 15 ? 
+                      seasonalityData.seasonal_variance < 15 ? 
                       'Consistent performance across quarters' :
-                      `High seasonal variation - focus on strengthening ${data.seasonality_patterns.weak_quarter}`
+                      `High seasonal variation - focus on strengthening ${seasonalityData.weak_quarter}`
                     }
                   </p>
                 </div>
@@ -331,7 +381,7 @@ export default function QuarterlyDashboard({ data, className = "" }: QuarterlyDa
               <div className="mt-3 p-3 bg-white rounded border border-blue-100">
                 <p className="text-xs text-gray-600">
                   💡 <strong>Strategic Focus:</strong> {
-                    data.year_over_year.profit_growth > data.year_over_year.revenue_growth ?
+                    yearOverYearData.profit_growth > yearOverYearData.revenue_growth ?
                     'Excellent cost management - leverage operational efficiency for expansion' :
                     'Optimize cost structure and pricing strategy to improve profitability'
                   }
