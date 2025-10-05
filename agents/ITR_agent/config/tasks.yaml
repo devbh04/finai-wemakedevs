@@ -1,0 +1,342 @@
+tasks:
+  # ==================== DOCUMENT ANALYSIS TASKS ====================
+  - name: "analyze_salaried_documents"
+    agent: "DocumentMaster"
+    description: |
+      Analyze documents specifically for SALARIED INDIVIDUAL:
+      - Salary slips and Form 16 analysis
+      - Bank statements for salary credits and interest income
+      - Investment proofs (80C, 80D, 80E, 80G)
+      - HRA documents (rent receipts, rental agreement)
+      - LTA proofs (travel tickets, boarding passes)
+      - Home loan statements (principal + interest)
+      - Education loan interest certificates
+      Calculate HRA exemption, verify standard deduction, and analyze PF contributions.
+    expected_output: |
+      Salaried Individual Document Analysis Report:
+      - Salary structure breakdown with components
+      - HRA exemption calculation with supporting details
+      - Current 80C utilization and gaps
+      - Loan interest deduction eligibility
+      - Current tax liability assessment
+
+  - name: "analyze_self_employed_documents"
+    agent: "DocumentMaster"
+    description: |
+      Analyze documents specifically for SELF-EMPLOYED/FREELANCER:
+      - Income invoices and client receipts
+      - Business expense bills (office rent, internet, travel, utilities)
+      - Asset purchase invoices (laptop, equipment, furniture)
+      - GST returns (GSTR-1, GSTR-3B)
+      - Business bank statements
+      - Professional tax receipts
+      Calculate business income, categorize expenses, and evaluate presumptive taxation eligibility.
+    expected_output: |
+      Self-Employed Document Analysis Report:
+      - Business income summary (client-wise)
+      - Expense categorization and analysis
+      - GST compliance status
+      - Presumptive vs regular taxation comparison
+      - Asset depreciation calculations
+
+  - name: "analyze_business_documents"
+    agent: "DocumentMaster"
+    description: |
+      Analyze documents specifically for BUSINESS ENTITY:
+      - Financial statements (P&L, Balance Sheet, Cash Flow)
+      - Sales and purchase invoices
+      - GST returns with input-output details
+      - TDS/TCS challans and returns
+      - Payroll data and employee benefits
+      - Asset purchase and depreciation schedules
+      Conduct complete financial ratio analysis and compliance verification.
+    expected_output: |
+      Business Entity Document Analysis Report:
+      - Financial ratio analysis (profitability, liquidity, solvency)
+      - GST compliance and optimization opportunities
+      - TDS/TCS compliance status
+      - Employee cost optimization analysis
+      - Depreciation strategy assessment
+
+  # ==================== INVESTMENT RESEARCH & PERFORMANCE TRACKING TASKS ====================
+  - name: "live_investment_research"
+    agent: "InvestmentResearchExpert"
+    description: |
+      Use web search to find CURRENT, SPECIFIC investment fund information for all user types. Provide actionable fund recommendations with exact names and details.
+
+      RESEARCH THE FOLLOWING WITH LIVE DATA:
+
+      ELSS Funds (for Section 80C):
+      - Find the top 3-5 performing ELSS funds for the current year
+      - For each fund, provide: Exact Fund Name, Fund House, Asset Under Management (AUM), Expense Ratio, and 3-year/5-year returns (CAGR)
+      - Include investment style (large-cap, multi-cap, etc.)
+
+      PPF (Public Provident Fund):
+      - Current PPF interest rate
+      - Tax benefits under both old and new regimes
+
+      NPS (National Pension System):
+      - Top 2-3 pension fund managers (HDFC, ICICI, LIC, etc.)
+      - Returns for "Aggressive" life-cycle fund option
+      - Additional tax benefit under Section 80CCD(1B)
+
+      Other Instruments:
+      - Tax-Free Bonds: Current issuances and their yields
+      - Senior Citizen Savings Scheme (SCSS): Current interest rate
+      - Fixed Deposits: Compare rates from top 3 banks for 5-year tax-saving FDs
+      - ULIPs: Top performing ULIP schemes with charges and returns
+
+      Business-Specific Options:
+      - Corporate FDs: Current rates from major financial institutions
+      - Government Business Schemes: Currently active MSME/startup investment benefits
+      - Infrastructure Bonds: Current availability and tax benefits
+
+      CRITICAL: For each fund recommendation, ensure you capture complete identifying information including exact fund name, fund house, and any available ticker symbols to enable proper performance tracking by the FundPerformanceTracker agent.
+    expected_output: |
+      Live Investment Research Report:
+      - ELSS Fund Recommendations: List of 3-5 specific funds with names, fund houses, AUM, expense ratios, and historical returns
+      - PPF Details: Current interest rate and tax treatment
+      - NPS Analysis: Top fund managers, recent returns for aggressive options, and tax rules
+      - Other Options: Current rates for SCSS, tax-free bonds, and top bank FDs
+      - Business Investments: Current corporate FD rates and government scheme benefits
+      - Summary: Concise comparison of recommended options based on risk and return
+      - Coordination Note: All recommended funds forwarded to FundPerformanceTracker for comprehensive performance analysis
+
+  - name: "track_fund_performance"
+    agent: "FundPerformanceTracker"
+    description: |
+      Analyze and compile detailed performance metrics for all suggested funds from the investment research.
+      
+      For EACH suggested fund, gather and structure:
+      
+      Basic Fund Details:
+      - Fund full name and ticker symbol (if available)
+      - Fund house/managing company
+      - Fund category (ELSS, Debt, Hybrid, etc.)
+      - Asset Under Management (AUM)
+      - Expense ratio
+      - Launch date
+      
+      Performance Metrics:
+      - 1-month, 3-month, 6-month returns
+      - 1-year, 3-year, 5-year returns (CAGR)
+      - Year-to-Date (YTD) performance
+      - Since inception returns
+      - Benchmark index and benchmark returns for same periods
+      
+      Risk Analysis:
+      - Standard deviation (volatility)
+      - Sharpe ratio
+      - Beta coefficient
+      - Maximum drawdown
+      - Risk rating (if available)
+      
+      Comparative Analysis:
+      - Performance vs category average
+      - Performance vs benchmark
+      - Peer ranking within category
+      
+      Portfolio Characteristics:
+      - Top 5 holdings and allocation percentages
+      - Sector allocation
+      - Market cap focus (large/mid/small cap)
+      
+      Present all data in a structured markdown format with clear sections and metrics.
+    expected_output: |
+      # Fund Performance Analysis Report
+      
+      ## Executive Summary
+      Brief overview of fund performance across categories...
+      
+      ## Detailed Fund Performance
+      
+      ### [Fund Name 1]
+      *Basic Information*
+      - Fund House: [Name]
+      - Category: [ELSS/Large Cap/etc.]
+      - AUM: [Amount]
+      - Expense Ratio: [Percentage]
+      - Launch Date: [Date]
+      
+      *Performance Metrics (Returns %)*
+      | Period | Fund Return | Benchmark | Category Average |
+      |--------|-------------|-----------|------------------|
+      | 1 Month | [ ]% | [ ]% | [ ]% |
+      | 3 Month | [ ]% | [ ]% | [ ]% |
+      | 6 Month | [ ]% | [ ]% | [ ]% |
+      | 1 Year | [ ]% | [ ]% | [ ]% |
+      | 3 Year (CAGR) | [ ]% | [ ]% | [ ]% |
+      | 5 Year (CAGR) | [ ]% | [ ]% | [ ]% |
+      | Since Inception | [ ]% | [ ]% | [ ]% |
+      
+      *Risk Metrics*
+      - Standard Deviation: [ ]%
+      - Sharpe Ratio: [ ]
+      - Beta: [ ]
+      - Maximum Drawdown: [ ]%
+      - Risk Rating: [ ]/5
+      
+      *Portfolio Composition*
+      - Top Holdings: [List top 5 with percentages]
+      - Sector Allocation: [Key sectors]
+      
+      [Repeat the same structure for each additional fund...]
+      
+      ## Comparative Analysis
+      - Best performing funds by time period
+      - Risk-adjusted return leaders
+      - Expense efficiency comparison
+      
+      ## Recommendations Summary
+      - Top picks for different risk profiles
+      - Funds to watch
+      - Cautions and considerations
+
+  # ==================== TAX OPTIMIZATION TASKS ====================
+  - name: "salaried_tax_optimization"
+    agent: "SalaryStructureExpert"
+    description: |
+      Develop SALARIED-SPECIFIC tax optimization strategy:
+      1. Salary restructuring recommendations (Basic, HRA, Special Allowance)
+      2. HRA exemption maximization strategies
+      3. LTA planning and optimization
+      4. 80C investment allocation using SPECIFIC FUND NAMES from investment research
+      5. NPS additional deduction planning
+      6. Health insurance optimization (80D)
+      7. Home loan interest optimization
+      8. Tax regime comparison (Old vs New) with calculations
+      Integrate specific investment fund names and amounts from the live research report and performance analysis.
+    expected_output: |
+      Salaried Tax Optimization Strategy:
+      - Recommended salary structure changes with component breakdown
+      - HRA optimization plan with detailed calculations
+      - 80C investment allocation with specific fund names and amounts
+      - NPS contribution recommendation
+      - Tax regime recommendation with comparative calculations
+
+  - name: "self_employed_tax_optimization"
+    agent: "BusinessTaxStrategist"
+    description: |
+      Develop SELF-EMPLOYED SPECIFIC tax optimization strategy:
+      1. Business expense maximization strategies
+      2. Presumptive taxation vs regular books analysis (Section 44ADA)
+      3. GST input credit optimization
+      4. Home office deduction calculations
+      5. Professional development expense claims
+      6. Asset depreciation optimization
+      7. Business investment recommendations using research data
+      8. Advance tax planning for irregular income
+      Integrate business investment options from the live research report and performance analysis.
+    expected_output: |
+      Self-Employed Tax Optimization Strategy:
+      - Business expense optimization plan with specific deductions
+      - Presumptive taxation recommendation with calculations
+      - GST optimization strategy with input credit maximization
+      - Home office and professional deduction plan
+      - Business investment recommendations with specific options
+
+  - name: "business_tax_optimization"
+    agent: "BusinessTaxStrategist"
+    description: |
+      Develop BUSINESS SPECIFIC tax optimization strategy:
+      1. Corporate expense optimization and deductions
+      2. GST composition scheme analysis
+      3. TDS/TCS optimization strategies
+      4. Employee benefit scheme tax efficiency
+      5. R&D and innovation deductions
+      6. Depreciation and amortization strategies
+      7. Dividend distribution tax planning
+      8. Business investment planning using corporate-specific options from research
+      Focus on corporate tax efficiency and compliance optimization.
+      Integrate performance data from fund analysis for better investment decisions.
+    expected_output: |
+      Business Tax Optimization Strategy:
+      - Corporate expense optimization plan
+      - GST strategy recommendation (composition vs regular)
+      - TDS/TCS optimization plan
+      - Employee benefit tax efficiency analysis
+      - Business investment strategy with specific corporate options
+
+  # ==================== RISK ASSESSMENT TASK ====================
+  - name: "comprehensive_risk_assessment"
+    agent: "RiskAssessmentAnalyst"
+    description: |
+      Conduct comprehensive tax risk assessment for all user types:
+      - Documentation risk analysis (HRA proofs, expense bills, investment proofs)
+      - Scrutiny trigger identification for high-value transactions
+      - Compliance gap analysis (GST, TDS, advance tax)
+      - Penalty risk assessment and mitigation
+      - Audit preparedness evaluation
+      - Investment risk analysis for recommended funds using performance metrics
+      Provide category-specific risk mitigation strategies.
+    expected_output: |
+      Comprehensive Risk Assessment Report:
+      - Identified risk areas with severity ratings
+      - Scrutiny trigger analysis for different transaction types
+      - Documentation requirements checklist
+      - Investment risk analysis for recommended funds using performance data
+      - Audit preparedness plan
+
+  # ==================== FINANCIAL PLAN GENERATION TASKS ====================
+  - name: "generate_salaried_financial_plan"
+    agent: "FinancialPlanGenerator"
+    description: |
+      Create comprehensive financial plan for SALARIED INDIVIDUAL:
+      1. Salary restructuring implementation timeline
+      2. HRA optimization with rent receipt schedule
+      3. 80C investment plan with SPECIFIC FUND NAMES AND AMOUNTS from research and performance analysis
+      4. NPS contribution strategy
+      5. Tax regime selection with calculations
+      6. Compliance calendar for salaried individuals
+      7. Emergency fund planning
+      8. Long-term wealth building strategy with projected returns
+      Include specific investment amounts, timelines, and projected returns from research data and performance metrics.
+    expected_output: |
+      Salaried Individual Financial Plan:
+      - Salary optimization timeline with monthly breakdown
+      - Investment plan with specific fund recommendations, amounts, performance metrics, and projected returns
+      - Tax saving projections with calculations
+      - Compliance and documentation checklist
+      - 5-year wealth projection based on recommended investments and historical performance
+
+  - name: "generate_self_employed_financial_plan"
+    agent: "FinancialPlanGenerator"
+    description: |
+      Create comprehensive financial plan for SELF-EMPLOYED:
+      1. Business expense optimization schedule
+      2. GST compliance and optimization calendar
+      3. Presumptive taxation implementation plan
+      4. Business investment strategy with specific options and performance data
+      5. Irregular income tax planning
+      6. Professional development investment plan
+      7. Emergency fund for variable income
+      8. Quarterly tax planning schedule
+      Integrate specific business investment options from research data and performance analysis.
+    expected_output: |
+      Self-Employed Financial Plan:
+      - Business expense optimization timeline
+      - GST compliance calendar with deadlines
+      - Tax optimization strategy with quarterly reviews
+      - Business investment recommendations with specific options and performance metrics
+      - Income stability measures
+
+  - name: "generate_business_financial_plan"
+    agent: "FinancialPlanGenerator"
+    description: |
+      Create comprehensive financial plan for BUSINESS ENTITY:
+      1. Corporate tax optimization timeline
+      2. GST strategy implementation plan
+      3. TDS/TCS optimization schedule
+      4. Employee benefit program rollout
+      5. Business investment and expansion plan with specific options and performance analysis
+      6. Compliance calendar for corporate entities
+      7. Risk management and audit preparedness
+      8. Growth and expansion strategy with ROI analysis
+      Integrate corporate-specific investment options from research data and performance metrics.
+    expected_output: |
+      Business Entity Financial Plan:
+      - Corporate tax optimization strategy with timeline
+      - GST implementation plan with milestones
+      - Business investment plan with specific options, performance data, and ROI analysis
+      - Compliance and risk management calendar
+      - Growth and expansion strategy

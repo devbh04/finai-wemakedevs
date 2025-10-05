@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+jinja2
+crewai
+crewai-tools
+PyPDF2
+pyyaml
+pathlib
+pandas
+openpyxl
+aiofiles
+python-dotenv

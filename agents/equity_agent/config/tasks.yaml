@@ -1,0 +1,235 @@
+tasks:
+  # ==================== LIVE DATA SCRAPING TASK ====================
+  - name: "scrape_financial_data"
+    agent: "LiveDataScraper"
+    description: |
+      SCRAPE LIVE FINANCIAL DATA from MoneyControl, Screener.in, and financial portals for the user's specified sector.
+
+      USER INPUT PARAMETERS:
+      - Sector Preference: [User's specified sector or "Any" if not specified]
+      - Investment Goal: [Wealth Creation, Retirement, etc.]
+      - Investment Style: [Trade/Invest/Swing Trade]
+      - Time Horizon: [Short-term/Long-term duration]
+      - Risk Appetite: [Low/Medium/High]
+
+      DATA SCRAPING REQUIREMENTS:
+
+      FOR STOCKS (Top 5):
+      Scrape the following specific data points for each stock:
+      - Company name and ticker symbol
+      - Current market price (CMP)
+      - Market capitalization
+      - P/E ratio (TTM)
+      - 52-week high and low prices
+      - Dividend yield (%)
+      - ROCE (%) and ROE (%)
+      - Debt-to-Equity ratio
+      - Face value and book value per share
+      - Quarterly sales and profit growth
+      - Promoter holding percentage
+      - Sector and industry classification
+
+      FOR MUTUAL FUNDS (Top 5):
+      Scrape the following specific data points for each fund:
+      - Fund name and AMC
+      - Current NAV
+      - AUM (Assets Under Management)
+      - 1-year, 3-year, 5-year returns (CAGR)
+      - Expense ratio
+      - Fund category (Large Cap, Mid Cap, Flexi Cap, etc.)
+      - Minimum investment amount
+      - Exit load structure
+      - Top 5 holdings with percentages
+      - Risk metrics (Standard Deviation, Sharpe Ratio if available)
+
+      Focus on scraping ACTUAL CURRENT DATA - do not use placeholders or example data.
+      Ensure data is from reliable financial sources and is up-to-date.
+    expected_output: |
+      # Live Financial Data Scraping Report
+
+      ## Research Parameters
+      - *Sector Focus*: [User's specified sector]
+      - *Investment Style*: [Trade/Invest/Swing Trade]
+      - *Time Horizon*: [User's specified duration]
+      - *Risk Profile*: [Low/Medium/High]
+
+      ## Top 5 Stocks Scraped Data
+
+      ### [Stock 1 Name]
+      | Metric | Value |
+      |--------|-------|
+      | *Ticker Symbol* | [Symbol] |
+      | *Current Price* | ₹[Current Price] |
+      | *Market Cap* | ₹[Amount] Cr |
+      | *P/E Ratio* | [P/E Value] |
+      | *52-Week Range* | ₹[Low] - ₹[High] |
+      | *Dividend Yield* | [ ]% |
+      | *ROCE* | [ ]% |
+      | *ROE* | [ ]% |
+      | *Debt-to-Equity* | [Ratio] |
+      | *Face Value* | ₹[Value] |
+      | *Book Value* | ₹[Value] |
+      | *Quarterly Sales Growth* | [ ]% |
+      | *Quarterly Profit Growth* | [ ]% |
+      | *Promoter Holding* | [ ]% |
+      | *Sector* | [Sector Name] |
+
+      ### [Stock 2 Name]
+      [Same structure as above with actual data]
+
+      ### [Stock 3 Name]
+      [Same structure as above with actual data]
+
+      ### [Stock 4 Name]
+      [Same structure as above with actual data]
+
+      ### [Stock 5 Name]
+      [Same structure as above with actual data]
+
+      ## Top 5 Mutual Funds Scraped Data
+
+      ### [Mutual Fund 1 Name]
+      | Metric | Value |
+      |--------|-------|
+      | *Fund House* | [AMC Name] |
+      | *Current NAV* | ₹[NAV] |
+      | *AUM* | ₹[Amount] Cr |
+      | *1-Year Return* | [ ]% |
+      | *3-Year CAGR* | [ ]% |
+      | *5-Year CAGR* | [ ]% |
+      | *Expense Ratio* | [ ]% |
+      | *Category* | [Fund Category] |
+      | *Minimum Investment* | ₹[Amount] |
+      | *Exit Load* | [Details] |
+      | *Top Holdings* | [Stock 1] ([ ]%), [Stock 2] ([ ]%), ... |
+      | *Risk Level* | [Low/Medium/High] |
+
+      ### [Mutual Fund 2 Name]
+      [Same structure as above with actual data]
+
+      ### [Mutual Fund 3 Name]
+      [Same structure as above with actual data]
+
+      ### [Mutual Fund 4 Name]
+      [Same structure as above with actual data]
+
+      ### [Mutual Fund 5 Name]
+      [Same structure as above with actual data]
+
+      ## Data Source Information
+      - *Primary Sources*: MoneyControl, Screener.in, [Other financial portals]
+      - *Data Timestamp*: [Date and time of scraping]
+      - *Data Completeness*: [Percentage of successful data retrieval]
+
+  # ==================== PERSONALIZED INVESTMENT PLANNING TASK ====================
+  - name: "create_investment_plan"
+    agent: "InvestmentPlanner"
+    description: |
+      ANALYZE USER'S FINANCIAL CAPACITY and create personalized investment recommendations.
+
+      INTEGRATE FROM PREVIOUS TASK:
+      - Scraped stock data (5 stocks)
+      - Scraped mutual fund data (5 funds)
+
+      ANALYZE USER'S CA REPORT TO DETERMINE:
+      - Total investment capacity from disposable income
+      - Emergency fund adequacy
+      - Risk capacity based on financial stability
+      - Monthly surplus for SIP investments
+      - Lump sum investment availability
+
+      CREATE COMPREHENSIVE INVESTMENT PLAN:
+      - Specific allocation between stocks and mutual funds
+      - Exact investment amounts for each recommended security
+      - SIP vs lump sum strategy based on user's timeframe
+      - Risk-adjusted portfolio construction
+      - Implementation timeline and action steps
+
+      Provide SPECIFIC investment amounts in Indian Rupees with clear rationale.
+    expected_output: |
+      # Personalized Investment Plan
+
+      ## Financial Capacity Analysis
+
+      ### User Financial Profile
+      - *User Type*: [Salaried/Self-Employed/Business from CA Report]
+      - *Annual Income*: ₹[Amount from CA Report]
+      - *Monthly Surplus*: ₹[Calculated Amount]
+      - *Emergency Fund Status*: [Adequate/Inadequate]
+      - *Risk Capacity*: [High/Medium/Low based on financial stability]
+
+      ### Investment Capacity Calculation
+      | Parameter | Amount | Calculation Basis |
+      |-----------|--------|-------------------|
+      | *Total Investment Capacity* | ₹[Amount] | [Explanation from CA report analysis] |
+      | *Monthly SIP Capacity* | ₹[Amount] | [Based on monthly surplus] |
+      | *Lump Sum Available* | ₹[Amount] | [From disposable savings] |
+      | *Recommended Equity Allocation* | [ ]% | [Based on risk profile] |
+
+      ## Recommended Investment Portfolio
+
+      ### Stock Investments (₹[Total Amount])
+      | Stock | Allocation % | Investment Amount | Rationale |
+      |-------|--------------|-------------------|-----------|
+      | [Stock 1] | [ ]% | ₹[Amount] | [Brief reason based on scraped data] |
+      | [Stock 2] | [ ]% | ₹[Amount] | [Brief reason based on scraped data] |
+      | [Stock 3] | [ ]% | ₹[Amount] | [Brief reason based on scraped data] |
+      | [Stock 4] | [ ]% | ₹[Amount] | [Brief reason based on scraped data] |
+      | [Stock 5] | [ ]% | ₹[Amount] | [Brief reason based on scraped data] |
+
+      ### Mutual Fund Investments (₹[Total Amount])
+      | Fund | Allocation % | Investment Amount | SIP Amount | Rationale |
+      |------|--------------|-------------------|------------|-----------|
+      | [Fund 1] | [ ]% | ₹[Amount] | ₹[SIP Amount] | [Brief reason based on scraped data] |
+      | [Fund 2] | [ ]% | ₹[Amount] | ₹[SIP Amount] | [Brief reason based on scraped data] |
+      | [Fund 3] | [ ]% | ₹[Amount] | ₹[SIP Amount] | [Brief reason based on scraped data] |
+      | [Fund 4] | [ ]% | ₹[Amount] | ₹[SIP Amount] | [Brief reason based on scraped data] |
+      | [Fund 5] | [ ]% | ₹[Amount] | ₹[SIP Amount] | [Brief reason based on scraped data] |
+
+      ## Investment Implementation Strategy
+
+      ### Option 1: One-Time Lump Sum Investment
+      *Total Amount*: ₹[Lump Sum Amount]
+      *Recommended For*: Users with available cash and medium-to-long term horizon
+
+      *Implementation Steps*:
+      1. *Week 1*: Invest ₹[Amount] in [Stock 1] and [Stock 2]
+      2. *Week 2*: Invest ₹[Amount] in [Mutual Fund 1] and [Mutual Fund 2]
+      3. *Week 3*: Invest ₹[Amount] in remaining stocks and funds
+
+      ### Option 2: Systematic Investment Plan (SIP)
+      *Total Monthly SIP*: ₹[Monthly SIP Amount]
+      *Recommended For*: Regular income earners, risk-averse investors
+
+      *SIP Allocation*:
+      | Fund | Monthly SIP | Date of Month |
+      |------|-------------|---------------|
+      | [Fund 1] | ₹[Amount] | [Date] |
+      | [Fund 2] | ₹[Amount] | [Date] |
+      | [Fund 3] | ₹[Amount] | [Date] |
+      | [Fund 4] | ₹[Amount] | [Date] |
+      | [Fund 5] | ₹[Amount] | [Date] |
+
+      ### Option 3: Hybrid Approach (Recommended)
+      *Lump Sum*: ₹[Amount] (for stocks and immediate mutual fund allocation)
+      *Monthly SIP*: ₹[Amount] (for ongoing mutual fund investments)
+
+      ## Portfolio Characteristics
+      - *Overall Risk Level*: [Low/Medium/High]
+      - *Expected Return*: [ ]% p.a. (based on historical performance)
+      - *Sector Diversification*: [Analysis of sector exposure]
+      - *Expense Ratio*: [ ]% (weighted average for funds)
+
+      ## Risk Management & Monitoring
+      - *Review Frequency*: [Monthly/Quarterly]
+      - *Rebalancing Triggers*: [Specific conditions]
+      - *Exit Strategy*: [Guidelines for each investment]
+
+      ## Important Disclaimers
+      - All investments carry market risk
+      - Past performance is not indicative of future returns
+      - Consult with financial advisor before investing
+      - Review investment decisions periodically
+
+      ## Complete Scraped Data Reference
+      [Include all the raw scraped data from the previous task here for complete transparency]

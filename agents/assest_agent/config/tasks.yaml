@@ -1,0 +1,208 @@
+tasks:
+  - name: "Calculate_Financial_Capacity"
+    agent: "Financial_Profile_Analyzer"
+    description: |
+      Analyze the user's financial statement (from the markdown).
+      Calculate and output the following key figures:
+      1.  *Immediate Investment Capacity:* The liquid surplus available for investment right now.
+      2.  *Monthly Investable Surplus:* The amount that can be invested each month after all expenses and taxes.
+      3.  *Maximum Home Loan Eligibility:* Calculate using both the income-multiple method (e.g., 5-6x annual income) and the EMI-affordability method (EMI not to exceed 40-50% of monthly surplus).
+      4.  *Affordable EMI:* The maximum monthly EMI the user can comfortably service.
+      DO NOT use web search. Provide only calculated numbers.
+    expected_output: |
+      # User Financial Capacity Analysis
+
+      ## Key Calculated Figures
+      - **Immediate Investment Capacity:** ₹[Amount]
+      - **Monthly Investable Surplus:** ₹[Amount]
+      - **Maximum Home Loan Eligibility (Income-Multiple):** ₹[Amount]
+      - **Maximum Home Loan Eligibility (EMI-Affordability):** ₹[Amount]
+      - **Affordable Monthly EMI:** ₹[Amount]
+
+      ---
+
+  - name: "Scrape_Live_Investment_Options"
+    agent: "Investment_Researcher"
+    description: |
+      The Asset_Allocation_Strategist needs you to SCRAPE LIVE DATA for investment options that fit the user's financial capacity (use the figures from the Financial_Profile_Analyzer).
+
+      Conduct targeted searches for the TOP 5 options in each category that are realistic for the user's budget:
+
+      1.  *Government Bonds & Sovereign Gold Bonds (SGBs):* Search "current sovereign gold bond series India issue price interest rate" and "government bonds India yield 2025". Extract: Bond Name, Issuer, Interest Rate/Coupon, Yield, Minimum Investment.
+      2.  *Debt Mutual Funds:* Search "best debt mutual funds 2025 Moneycontrol returns". Extract: Fund Name, AMC, 1-Year Return, Expense Ratio, Minimum SIP/Lump-sum.
+      3.  *Certificate of Deposits (CDs):* Search "certificate of deposit rates India banks 2025". Extract: Bank/NBFC Name, Rate, Period, Minimum Amount.
+      4.  *Real Estate in Pune:* Search "2 BHK flat for sale Pune [Location] site:housing.com" and "3 BHK apartment Pune site:99acres.com". Target areas like Kalyani Nagar, Hinjewadi, Baner, Wakad. Extract: Property Name, Builder, Exact Location, Listed Price, Carpet Area, Configuration, Status (Ready-to-Move/Under-Construction).
+
+      Return only structured, factual data. Do not analyze or make recommendations.
+    expected_output: |
+      ## Top Government Bonds & SGBs
+      | Instrument Name | Issuer | Interest Rate | Yield | Minimum Investment |
+      |-----------------|--------|---------------|-------|-------------------|
+      | [Scraped Bond 1] | [e.g., Government of India] | [%] | [%] | ₹[Amount] |
+      | [Scraped Bond 2] | [e.g., Government of India] | [%] | [%] | ₹[Amount] |
+      | [Scraped Bond 3] | [e.g., Government of India] | [%] | [%] | ₹[Amount] |
+      | [Scraped Bond 4] | [e.g., Government of India] | [%] | [%] | ₹[Amount] |
+      | [Scraped Bond 5] | [e.g., Government of India] | [%] | [%] | ₹[Amount] |
+
+      ## Top Debt Mutual Funds
+      | Fund Name | AMC | 1-Year Return (as of Oct 2025) | Expense Ratio | Min. Investment |
+      |-----------|-----|-------------------------------|---------------|-----------------|
+      | [Scraped Fund 1] | [AMC] | [%] | [%] | ₹[Amount] |
+      | [Scraped Fund 2] | [AMC] | [%] | [%] | ₹[Amount] |
+      | [Scraped Fund 3] | [AMC] | [%] | [%] | ₹[Amount] |
+      | [Scraped Fund 4] | [AMC] | [%] | [%] | ₹[Amount] |
+      | [Scraped Fund 5] | [AMC] | [%] | [%] | ₹[Amount] |
+
+      ## Top Certificate of Deposits
+      | Bank/NBFC | Rate (p.a.) | Period | Minimum Amount |
+      |-----------|-------------|--------|----------------|
+      | [Scraped CD 1] | [%] | [Months] | ₹[Amount] |
+      | [Scraped CD 2] | [%] | [Months] | ₹[Amount] |
+      | [Scraped CD 3] | [%] | [Months] | ₹[Amount] |
+      | [Scraped CD 4] | [%] | [Months] | ₹[Amount] |
+      | [Scraped CD 5] | [%] | [Months] | ₹[Amount] |
+
+      ## Top Real Estate Listings in Pune
+      | Property Name | Builder | Location | Price | Area | Configuration | Status |
+      |---------------|---------|----------|-------|------|---------------|--------|
+      | [Scraped Property 1] | [Builder] | [Locality] | ₹[Price] | [sq.ft] | [e.g., 2 BHK] | [Ready-to-Move] |
+      | [Scraped Property 2] | [Builder] | [Locality] | ₹[Price] | [sq.ft] | [e.g., 3 BHK] | [Under-Construction] |
+      | [Scraped Property 3] | [Builder] | [Locality] | ₹[Price] | [sq.ft] | [e.g., 3 BHK] | [Ready-to-Move] |
+      | [Scraped Property 4] | [Builder] | [Locality] | ₹[Price] | [sq.ft] | [e.g., 2 BHK] | [Under-Construction] |
+      | [Scraped Property 5] | [Builder] | [Locality] | ₹[Price] | [sq.ft] | [e.g., 3 BHK] | [Ready-to-Move] |
+
+      These tables present the latest, specific investment options and real‑estate listings that align with the user's financial capacity. All data have been scraped from live sources as of 5 Oct 2025.
+
+      ---
+
+  - name: "Create_Comprehensive_Investment_Plan"
+    agent: "Asset_Allocation_Strategist"
+    description: |
+      Create the final "Comprehensive Asset Allocation & Investment Strategy" report.
+      You MUST use the SPECIFIC data from the previous two tasks:
+
+      - The *financial capacity numbers* (investment capacity, loan eligibility) from Calculate_Financial_Capacity.
+      - The *SCRAPED investment options* (bonds, funds, properties) from Scrape_Live_Investment_Options.
+
+      Your report must be highly descriptive for real estate and include a clear, justified loan strategy. For each recommended asset, state whether to use a loan or own funds and why.
+
+      Structure the final output to include the scraped data tables so the user can see the exact options that informed your plan.
+    expected_output: |
+      **Comprehensive Asset Allocation & Investment Strategy**
+
+      ---
+
+      ## 1. Executive Summary & Financial Capacity
+
+      | Metric | Amount (₹) | Comment |
+      |--------|------------|---------|
+      | **Immediate Investment Capacity** | **[Amount]** | [Description] |
+      | **Monthly Investable Surplus** | **[Amount]** | [Description] |
+      | **Maximum Home‑Loan Eligibility (Income‑Multiple)** | **[Amount]** | [Description] |
+      | **Maximum Home‑Loan Eligibility (EMI‑Affordability)** | **[Amount]** | [Description] |
+      | **Affordable Monthly EMI** | **₹[Amount]** | [Description] |
+
+      **Strategic Take‑away:**
+      [Brief strategic overview paragraph]
+
+      ---
+
+      ## 2. Detailed Asset Allocation & Specific Recommendations
+
+      ### 2.1 Allocation Overview
+
+      | Asset Class | Total Allocation (₹) | % of Immediate Capacity* | Funding Source | Recommended Instruments (Buy/Hold/AVOID) |
+      |------------|----------------------|--------------------------|----------------|------------------------------------------|
+      | **Real Estate (Purchase)** | **[Amount]** | [%] | [Source] | **BUY** – [Specific recommendation] |
+      | **Government Bonds / Treasury Bills** | **[Amount]** | [%] | [Source] | **BUY** – [Specific recommendation] |
+      | **Sovereign Gold Bonds (SGB)** | **[Amount]** | [%] | [Source] | **BUY** – [Specific recommendation] |
+      | **Debt Mutual Funds** | **[Amount]** | [%] | [Source] | **BUY** – [Specific recommendation] |
+      | **Certificates of Deposit (CDs)** | **[Amount]** | [%] | [Source] | **BUY** – [Specific recommendation] |
+      | **Cash Buffer / Emergency Fund** | **[Amount]** | [%] | [Source] | **HOLD** – [Description] |
+      | **Monthly Surplus Deployment (post‑loan EMI)** | **[Amount] (per month)** | – | Salary | [Detailed breakdown] |
+
+      *Percentages are calculated against the **Immediate Investment Capacity** (₹[Amount]).
+
+      ### 2.2 Rationale for Each Allocation
+
+      | Asset | Why BUY / HOLD / AVOID | Loan vs Own Funds |
+      |-------|------------------------|-------------------|
+      | **Real Estate** | **BUY** – [Rationale] | **Loan ([%])** + **Own cash ([%])** for down‑payment. |
+      | **Govt. Bonds / T‑Bills** | **BUY** – [Rationale] | **Own cash** (liquid, no debt). |
+      | **SGB** | **BUY** – [Rationale] | **Own cash** (no loan). |
+      | **Debt Mutual Funds** | **BUY** – [Rationale] | **Own cash (SIP)**. |
+      | **CDs** | **BUY** – [Rationale] | **Own cash**. |
+      | **Cash Buffer** | **HOLD** – [Rationale] | **Own cash**. |
+
+      ---
+
+      ## 3. Loan Utilization Strategy by Asset
+
+      | Asset | Loan Amount (₹) | LTV / Financing Ratio | EMI (₹) | Tenure | Interest Rate (Assumed) | Why Use Loan? |
+      |-------|----------------|-----------------------|---------|--------|--------------------------|----------------|
+      | **Real Estate Purchase** | **₹[Amount]** | [%] LTV | **≈₹[Amount]** | [Years] years | [%] | [Detailed rationale] |
+      | **Other Assets** | **None** | – | – | – | – | [Rationale] |
+
+      **Down‑payment Funding Plan:**
+      [Detailed funding plan with specific amounts and timeline]
+
+      ---
+
+      ## 4. Scraped Investment Options Analysis
+
+      ### 4.1 Government Bonds & Sovereign Gold Bonds
+
+      [Insert the complete scraped table from Investment_Researcher]
+
+      **Selection Rationale:**
+      [Detailed rationale for top choices]
+
+      ### 4.2 Debt Mutual Funds
+
+      [Insert the complete scraped table from Investment_Researcher]
+
+      **Selection Rationale:**
+      [Detailed rationale for top choices]
+
+      ### 4.3 Certificates of Deposit
+
+      [Insert the complete scraped table from Investment_Researcher]
+
+      **Selection Rationale:**
+      [Detailed rationale for top choices]
+
+      ### 4.4 Real Estate Listings in Pune
+
+      [Insert the complete scraped table from Investment_Researcher]
+
+      **Selection Rationale (Top 2 BUY choices):**
+      [Detailed analysis of top 2 properties with specific reasons]
+
+      ---
+
+      ## 5. Implementation Timeline
+
+      | Week | Action | Details |
+      |------|--------|---------|
+      | **Week 1‑2** | **Cash Allocation** | [Specific action items] |
+      | **Week 3** | **Short‑Term Bond Purchase** | [Specific action items] |
+      | **Week 4** | **SGB Purchase** | [Specific action items] |
+      | **Week 5‑6** | **CD Placement** | [Specific action items] |
+      | **Week 7** | **Down‑payment Accumulation** | [Specific action items] |
+      | **Month 2‑3** | **Finalize Property Selection** | [Specific action items] |
+      | **Month 3** | **Loan Application** | [Specific action items] |
+      | **Month 4** | **Loan Disbursement & Purchase** | [Specific action items] |
+      | **Month 5‑24** | **Ongoing Investment & Debt Management** | [Specific action items] |
+      | **Year 3‑5** | **Portfolio Review** | [Specific action items] |
+
+      ---
+
+      ### Bottom Line
+
+      [3-4 bullet points summarizing the key strategic recommendations]
+
+      By following the above timeline, the client will build a **balanced, growth‑oriented, tax‑efficient** wealth portfolio that aligns with their cash flow, loan capacity, and the vibrant [Location] real‑estate market.
+
+      ---
+
+      *Report generated by Asset Investment Analysis Agent*

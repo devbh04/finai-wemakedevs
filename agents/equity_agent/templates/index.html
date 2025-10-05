@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equity Investment Analysis Agent</title>
+    <link rel="stylesheet" href="/equity-static/equity_style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏦 Equity Investment Analysis Agent</h1>
+            <p>Get personalized stock and mutual fund recommendations based on your financial profile</p>
+        </header>
+
+        <form id="equityForm">
+            <div class="form-section">
+                <h3>Investment Preferences</h3>
+                
+                <div class="form-group">
+                    <label for="sector">Preferred Sector (Optional):</label>
+                    <select id="sector" name="sector">
+                        <option value="">Any Sector</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Financial Services">Financial Services</option>
+                        <option value="Consumer Goods">Consumer Goods</option>
+                        <option value="Energy">Energy</option>
+                        <option value="Real Estate">Real Estate</option>
+                        <option value="Manufacturing">Manufacturing</option>
+                        <option value="Telecommunications">Telecommunications</option>
+                        <option value="Agriculture">Agriculture</option>
+                        <option value="Infrastructure">Infrastructure</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="goal">Investment Goal:</label>
+                    <select id="goal" name="goal" required>
+                        <option value="">Select your goal</option>
+                        <option value="Wealth creation">Long-term wealth creation</option>
+                        <option value="Regular income">Regular income generation</option>
+                        <option value="Capital appreciation">Capital appreciation</option>
+                        <option value="Retirement planning">Retirement planning</option>
+                        <option value="Child education">Child's education</option>
+                        <option value="Emergency fund">Emergency fund building</option>
+                        <option value="Tax saving">Tax saving</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="style">Investment Style:</label>
+                    <select id="style" name="style" required>
+                        <option value="">Select investment style</option>
+                        <option value="invest">Long-term Investing (Hold for years)</option>
+                        <option value="swing_trade">Swing Trading (Hold for weeks/months)</option>
+                        <option value="trade">Day Trading (Short-term)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="duration">Investment Duration:</label>
+                    <select id="duration" name="duration" required>
+                        <option value="">Select duration</option>
+                        <option value="Less than 1 year">Less than 1 year</option>
+                        <option value="1-3 years">1-3 years</option>
+                        <option value="3-5 years">3-5 years</option>
+                        <option value="5-10 years">5-10 years</option>
+                        <option value="10+ years">10+ years</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="risk_level">Risk Tolerance:</label>
+                    <select id="risk_level" name="risk_level" required>
+                        <option value="">Select risk level</option>
+                        <option value="low">Low Risk (Conservative)</option>
+                        <option value="medium">Medium Risk (Moderate)</option>
+                        <option value="high">High Risk (Aggressive)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>CA Report Integration (Optional)</h3>
+                <div class="form-group">
+                    <label for="ca_report">Paste CA Report Content:</label>
+                    <textarea id="ca_report" name="ca_report" rows="6" 
+                              placeholder="Paste your CA report content here for personalized investment capacity analysis..."></textarea>
+                    <small>This will help provide more accurate investment recommendations based on your financial situation.</small>
+                </div>
+            </div>
+
+            <button type="submit" class="analyze-btn">🔍 Analyze Investment Options</button>
+        </form>
+
+        <div id="loading" style="display:none;" class="loading">
+            <div class="spinner"></div>
+            <p>🧠 AI agents are analyzing market data and creating your personalized investment strategy...</p>
+            <small>This may take 2-3 minutes for comprehensive analysis</small>
+        </div>
+
+        <div id="response-container" style="display:none;">
+            <div class="result-header">
+                <h3 id="task-name"></h3>
+                <div class="view-toggle">
+                    <button id="formatted-view" class="active">📊 Formatted View</button>
+                    <button id="markdown-view">📝 Raw Report</button>
+                </div>
+            </div>
+            <div id="response" class="response-content"></div>
+            <div id="markdown-content" class="markdown-content" style="display:none;"></div>
+            <div class="analysis-info">
+                <p><strong>Analysis Parameters:</strong></p>
+                <div id="user-inputs-display"></div>
+            </div>
+        </div>
+
+        <div id="error" style="display:none;" class="error-message"></div>
+
+        <div class="reports-section">
+            <h3>📈 Previous Analysis Reports</h3>
+            <button id="load-reports" class="secondary-btn">Load Reports</button>
+            <div id="reports-list" style="display:none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('equityForm');
+        const responseEl = document.getElementById('response');
+        const markdownEl = document.getElementById('markdown-content');
+        const responseContainer = document.getElementById('response-container');
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+
+        // Format equity report for better readability
+        function formatEquityReport(text) {
+            let formatted = text
+                // Headers
+                .replace(/^(#+)\s+(.+)$/gm, '<h$1.length class="report-header">$2</h$1.length>')
+                // Bold text
+                .replace(/\*\*(.*?)\*/g, '<strong>$1</strong>')
+                // Lists
+                .replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>')
+                // Tables (basic support)
+                .replace(/\|(.+)\|/g, '<tr><td>$1</td></tr>')
+                // Numbers and currency
+                .replace(/₹([\d,]+)/g, '<span class="currency">₹$1</span>')
+                .replace(/(\d+)%/g, '<span class="percentage">$1%</span>')
+                // Line breaks
+                .replace(/\n/g, '<br>');
+
+            // Wrap consecutive list items
+            formatted = formatted.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+            
+            return formatted;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Hide previous results and errors
+            responseContainer.style.display = 'none';
+            errorEl.style.display = 'none';
+            loadingEl.style.display = 'block';
+
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('/equity/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                loadingEl.style.display = 'none';
+
+                if (data.status === 'success') {
+                    document.getElementById('task-name').textContent = data.task_name;
+                    responseEl.innerHTML = formatEquityReport(data.result);
+                    markdownEl.textContent = data.result;
+                    
+                    // Display user inputs
+                    const inputsDisplay = document.getElementById('user-inputs-display');
+                    const inputs = data.user_inputs;
+                    inputsDisplay.innerHTML = `
+                        <div class="input-summary">
+                            <span><strong>Sector:</strong> ${inputs.sector || 'Any'}</span>
+                            <span><strong>Goal:</strong> ${inputs.goal}</span>
+                            <span><strong>Style:</strong> ${inputs.style}</span>
+                            <span><strong>Duration:</strong> ${inputs.duration}</span>
+                            <span><strong>Risk:</strong> ${inputs.risk_level}</span>
+                        </div>
+                    `;
+                    
+                    responseContainer.style.display = 'block';
+                } else {
+                    errorEl.textContent = `Error: ${data.error}`;
+                    errorEl.style.display = 'block';
+                }
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                errorEl.textContent = `Network Error: ${error.message}`;
+                errorEl.style.display = 'block';
+            }
+        });
+
+        // View toggle functionality
+        document.getElementById('formatted-view').addEventListener('click', () => {
+            responseEl.style.display = 'block';
+            markdownEl.style.display = 'none';
+            document.getElementById('formatted-view').classList.add('active');
+            document.getElementById('markdown-view').classList.remove('active');
+        });
+
+        document.getElementById('markdown-view').addEventListener('click', () => {
+            responseEl.style.display = 'none';
+            markdownEl.style.display = 'block';
+            document.getElementById('formatted-view').classList.remove('active');
+            document.getElementById('markdown-view').classList.add('active');
+        });
+
+        // Load reports functionality
+        document.getElementById('load-reports').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/equity/reports');
+                const data = await response.json();
+                
+                const reportsList = document.getElementById('reports-list');
+                if (data.reports && data.reports.length > 0) {
+                    reportsList.innerHTML = data.reports.map(report => `
+                        <div class="report-item">
+                            <span class="report-name">${report.filename}</span>
+                            <span class="report-date">${report.created}</span>
+                            <button onclick="loadReport('${report.filename}')" class="load-report-btn">View</button>
+                        </div>
+                    `).join('');
+                    reportsList.style.display = 'block';
+                } else {
+                    reportsList.innerHTML = '<p>No previous reports found.</p>';
+                    reportsList.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading reports:', error);
+            }
+        });
+
+        // Load specific report
+        async function loadReport(filename) {
+            try {
+                const response = await fetch(`/equity/report/${filename}`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    document.getElementById('task-name').textContent = `Previous Report: ${filename}`;
+                    responseEl.innerHTML = formatEquityReport(data.content);
+                    markdownEl.textContent = data.content;
+                    responseContainer.style.display = 'block';
+                    
+                    // Scroll to results
+                    responseContainer.scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (error) {
+                console.error('Error loading report:', error);
+            }
+        }
+    </script>
+</body>
+</html>
