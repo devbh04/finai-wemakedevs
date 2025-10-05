@@ -3,11 +3,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ComicText } from '../ui/comic-text';
 import { TypingAnimation } from '../ui/typing-animation';
-import { ITRAlertDialog } from './ITRAlertDialog';
+import { FinancialServicesDialog } from '../financial-services/FinancialServicesDialog';
 
 export default function ITRHelperButton() {
     return (
-        <ITRAlertDialog>
+        <FinancialServicesDialog>
             <button className='fixed bottom-4 left-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:scale-105 transition-transform duration-300'>
                 <TypingAnimation className='text-xl flex justify-center font-bold' loop={true}>For Saving Tax💰</TypingAnimation>
                 <motion.div 
@@ -38,6 +38,6 @@ export default function ITRHelperButton() {
                     }}
                 />
             </button>
-        </ITRAlertDialog>
+        </FinancialServicesDialog>
     );
 }

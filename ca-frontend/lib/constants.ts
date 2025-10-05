@@ -34,7 +34,7 @@ export const DocTypes = {
   // Based on occupation type
   "salaried": {
     title: "Salaried Employee Documents",
-    options: ["Salary Slip", "Form 16", "Bank Statement", "PAN Card"],
+    options: ["Salary Slip", "Proof Of Allowances", "Investment Portfolio", "Loan and EMI"],
     relatedDocs: ["Employment Letter", "Previous Year ITR", "Investment Proofs", "LTA Bills", "Medical Bills"]
   },
   "self-employed": {

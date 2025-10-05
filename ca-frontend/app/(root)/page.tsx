@@ -9,11 +9,12 @@ import { useFileUploadStore } from "@/lib/store";
 import { DocTypes } from "@/lib/constants";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Shield } from "lucide-react";
 import { AnimatedGradientText } from "@/components/ui/animated-gradient-text";
 import { cn } from "@/lib/utils";
 import { Highlighter } from "@/components/ui/highlighter";
 import ITRHelperButton from "@/components/itr-helper/ITRHelperButton";
+import { Input } from "@/components/ui/input";
 
 export default function Home() {
   const texts = [
@@ -24,9 +25,11 @@ export default function Home() {
   ];
   const [selectedButton, setSelectedButton] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [useEncryption, setUseEncryption] = useState(false);
+  const [uploadSession, setUploadSession] = useState<any>(null);
 
   // Zustand store
-  const { files, clearAllFiles, addFile } = useFileUploadStore();
+  const { files, addFile } = useFileUploadStore();
 
   // Enable smooth scrolling with better performance
   useEffect(() => {
@@ -62,6 +65,114 @@ export default function Home() {
     // File is already removed from Zustand store, no need to manage local state
   };
 
+  // File upload handlers for quick upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    selectedFiles.forEach((file, index) => {
+      addFile(`file_${index}`, file);
+    });
+  };
+
+  const handleSecureFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(event.target.files || []);
+    selectedFiles.forEach((file, index) => {
+      addFile(`file_${index}`, file);
+    });
+  };
+
+  const handleEncryptedUploadComplete = (analysisResult: any) => {
+    console.log("Encrypted analysis complete:", analysisResult);
+    
+    // Store the result in localStorage to pass to ca-report page
+    localStorage.setItem("caAnalysisResult", JSON.stringify(analysisResult));
+    
+    // Navigate to ca-report page
+    window.location.href = "/ca-report";
+  };
+
+  const handleSecureUpload = async () => {
+    if (!selectedButton) {
+      alert("Please select an occupation type first.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const formData = new FormData();
+
+      // Map frontend button values to backend expected values
+      const clientTypeMapping: { [key: string]: string } = {
+        salaried: "salaried",
+        "self-employed": "self_employed",
+        businessman: "business",
+      };
+
+      const clientType = clientTypeMapping[selectedButton] || selectedButton;
+      formData.append("client_type", clientType);
+
+      // Add all uploaded files
+      Object.values(assignedFiles).forEach((file) => {
+        formData.append("files", file);
+      });
+
+      console.log("Starting secure upload...");
+      console.log("Frontend button:", selectedButton);
+      console.log("Backend client_type:", clientType);
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+      
+      // Step 1: Secure upload
+      const uploadResponse = await axios.post(
+        `${apiUrl}/secure/upload`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 120000,
+          withCredentials: false,
+        }
+      );
+
+      console.log("Secure upload response:", uploadResponse.data);
+      
+      if (uploadResponse.data.status === "success") {
+        // Store session data
+        const sessionData = {
+          upload_session_id: uploadResponse.data.upload_session_id,
+          access_token: uploadResponse.data.access_token
+        };
+        setUploadSession(sessionData);
+        
+        // Step 2: Grant access and process (optimized single call)
+        const grantFormData = new FormData();
+        grantFormData.append('access_token', uploadResponse.data.access_token);
+        grantFormData.append('client_type', clientType);
+
+        const grantResponse = await axios.post(
+          `${apiUrl}/secure/session/${uploadResponse.data.upload_session_id}/grant`,
+          grantFormData,
+          {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 240000,
+          }
+        );
+
+        console.log("Grant and process response:", grantResponse.data);
+        
+        // Store the result and navigate
+        localStorage.setItem("caAnalysisResult", JSON.stringify(grantResponse.data));
+        window.location.href = "/ca-report";
+      } else {
+        throw new Error(uploadResponse.data.message || "Upload failed");
+      }
+      
+    } catch (error: any) {
+      console.error('Secure processing failed:', error);
+      alert(`Secure processing failed: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUpload = async () => {
     if (!selectedButton) {
       alert("Please select an occupation type first.");
@@ -91,8 +202,9 @@ export default function Home() {
       console.log("Frontend button:", selectedButton);
       console.log("Backend client_type:", clientType);
 
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
       const response = await axios.post(
-        "http://127.0.0.1:8000/ca/analyze",
+        `${apiUrl}/ca/analyze`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -270,7 +382,34 @@ export default function Home() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4">
               What is your source of income?
             </h2>
-            <p className="text-lg text-gray-600">Select one to get started</p>
+            <p className="text-lg text-gray-600 mb-4">Select one to get started</p>
+            
+            {/* Encryption Toggle */}
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <span className="text-sm text-gray-600">Standard Upload</span>
+              <button
+                onClick={() => setUseEncryption(!useEncryption)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  useEncryption ? 'bg-blue-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    useEncryption ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className="text-sm text-gray-600 flex items-center gap-1">
+                <Shield className="h-4 w-4" />
+                Secure Encrypted Upload
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">
+              {useEncryption 
+                ? "Files will be encrypted before upload for maximum security" 
+                : "Standard file upload with HTTPS protection"
+              }
+            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
@@ -327,32 +466,31 @@ export default function Home() {
                 <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6 shadow-lg">
                   <div className="text-center mb-4">
                     <h3 className="text-xl font-bold text-gray-800 mb-2">
-                      🚀 Quick Upload for{" "}
+                      {useEncryption ? "🔐" : "🚀"} {useEncryption ? "Secure" : "Quick"} Upload for{" "}
                       {selectedButton.charAt(0).toUpperCase() +
                         selectedButton.slice(1).replace("-", " ")}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Upload all your documents at once for instant analysis
+                      {useEncryption 
+                        ? "Upload all your documents with end-to-end encryption for secure analysis"
+                        : "Upload all your documents at once for instant analysis"
+                      }
                     </p>
                   </div>
 
                   <div className="flex flex-col items-center space-y-4">
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => {
-                        const uploadedFiles = Array.from(e.target.files || []);
-                        uploadedFiles.forEach((file, index) => {
-                          const optionName = `document_${index + 1}`;
-                          addFile(optionName, file);
-                          handleFileAssigned(optionName, file);
-                        });
-                      }}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
-                    />
-
-                    {Object.keys(assignedFiles).length > 0 && (
+                        <Input
+                          type="file"
+                          onChange={useEncryption ? handleSecureFileUpload : handleFileUpload}
+                          multiple
+                          accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                          className={`flex-1 cursor-pointer bg-white transition-colors duration-200 ${
+                            useEncryption 
+                              ? "border-blue-300 hover:border-blue-400 focus:border-blue-500"
+                              : "border-gray-300 hover:border-blue-400 focus:border-blue-500"
+                          }`}
+                          disabled={loading}
+                        />                    {Object.keys(assignedFiles).length > 0 && (
                       <div className="w-full">
                         <div className="text-center mb-3">
                           <span className="text-sm text-green-600 font-medium">
@@ -362,17 +500,21 @@ export default function Home() {
                         </div>
 
                         <Button
-                          onClick={handleUpload}
+                          onClick={useEncryption ? handleSecureUpload : handleUpload}
                           disabled={loading}
-                          className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50"
+                          className={`w-full font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 ${
+                            useEncryption 
+                              ? "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                              : "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                          }`}
                         >
                           {loading ? (
                             <div className="flex items-center justify-center space-x-2">
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              <span>Analyzing Documents...</span>
+                              <span>{useEncryption ? "Encrypting & Analyzing..." : "Analyzing Documents..."}</span>
                             </div>
                           ) : (
-                            `🔍 Analyze ${
+                            `${useEncryption ? "🔐 Secure Analyze" : "🔍 Analyze"} ${
                               Object.keys(assignedFiles).length
                             } Document${
                               Object.keys(assignedFiles).length !== 1 ? "s" : ""
@@ -447,6 +589,8 @@ export default function Home() {
                     optionalDocs={documentConfig.relatedDocs || []}
                     onFileAssign={handleFileAssigned}
                     onFileRemove={handleFileRemoved}
+                    enableEncryption={useEncryption}
+                    onEncryptedUploadComplete={handleEncryptedUploadComplete}
                   />
                 </motion.div>
 
@@ -601,32 +745,36 @@ export default function Home() {
                       </div>
 
                       <Button
-                        onClick={handleUpload}
+                        onClick={useEncryption ? handleSecureUpload : handleUpload}
                         disabled={
                           loading ||
                           documentConfig.options.filter(
                             (doc) => assignedFiles[doc]
                           ).length !== documentConfig.options.length
                         }
-                        className="cursor-pointer bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-2 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors text-sm sm:text-lg w-full sm:w-auto"
+                        className="cursor-pointer bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-2 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors text-sm sm:text-lg w-full sm:w-auto flex items-center justify-center gap-2"
                       >
                         {loading ? (
                           <div className="flex items-center justify-center space-x-2">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            <span>Analyzing Documents...</span>
+                            <span>{useEncryption ? "Securely Processing..." : "Analyzing Documents..."}</span>
                           </div>
                         ) : (
-                          `🔍 Analyze ${
-                            Object.keys(assignedFiles).length
-                          } Document${
-                            Object.keys(assignedFiles).length !== 1 ? "s" : ""
-                          }`
+                          <>
+                            {useEncryption ? <Shield className="h-4 w-4" /> : <span>🔍</span>}
+                            {useEncryption ? 
+                              `🔒 Secure Analyze ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? "s" : ""}` :
+                              `🔍 Analyze ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? "s" : ""}`
+                            }
+                          </>
                         )}
                       </Button>
 
                       {/* Upload Info */}
                       <div className="mt-2 sm:mt-3 text-xs text-gray-500 px-2 sm:px-0">
-                        {documentConfig.options.length > 0 &&
+                        {useEncryption ? (
+                          "Secure encryption mode enabled"
+                        ) : documentConfig.options.length > 0 &&
                         documentConfig.options.filter(
                           (doc) => assignedFiles[doc]
                         ).length !== documentConfig.options.length
@@ -641,9 +789,6 @@ export default function Home() {
           </AnimatePresence>
         </div>
       </div>
-      
-      {/* ITR Helper Button - Fixed position */}
-      <ITRHelperButton />
     </div>
   );
 }

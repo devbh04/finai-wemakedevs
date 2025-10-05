@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Chatbot - Markdown Assistant</title>
+    <link rel="stylesheet" href="/chatbot-static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Markdown Assistant</h1>
+        <p class="subtitle">Upload your markdown content and ask questions about it!</p>
+        
+        <div class="chat-container">
+            <!-- Markdown Input Section -->
+            <div class="markdown-section">
+                <h3>📝 Markdown Content</h3>
+                <form id="markdownForm">
+                    <textarea 
+                        id="markdownInput" 
+                        name="markdown_input" 
+                        placeholder="Paste your markdown content here...
+# Example Markdown
+This is a sample markdown document.
+
+## Section 1
+- Item 1
+- Item 2
+
+## Section 2
+**Bold text** and *italic text* example."
+                        rows="15"
+                        required
+                    ></textarea>
+                    <button type="button" id="previewBtn" class="preview-btn">Preview Markdown</button>
+                </form>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="chat-section">
+                <h3>💬 Ask Questions</h3>
+                <div id="chatMessages" class="chat-messages">
+                    <div class="system-message">
+                        👋 Hello! I'm your Gemini-powered assistant. Paste your markdown content on the left, then ask me any questions about it!
+                    </div>
+                </div>
+                
+                <form id="chatForm" class="chat-form">
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            id="userQuestion" 
+                            name="user_question" 
+                            placeholder="Ask a question about your markdown content..."
+                            required
+                        >
+                        <button type="submit" id="sendBtn">Send</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Markdown Preview Modal -->
+        <div id="previewModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📖 Markdown Preview</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div id="previewContent" class="preview-content">
+                    <!-- Preview content will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing your request...</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const markdownInput = document.getElementById('markdownInput');
+        const chatForm = document.getElementById('chatForm');
+        const userQuestion = document.getElementById('userQuestion');
+        const chatMessages = document.getElementById('chatMessages');
+        const previewBtn = document.getElementById('previewBtn');
+        const previewModal = document.getElementById('previewModal');
+        const previewContent = document.getElementById('previewContent');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const closeModal = document.querySelector('.close');
+
+        // Chat form submission
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const markdown = markdownInput.value.trim();
+            const question = userQuestion.value.trim();
+            
+            if (!markdown) {
+                alert('Please provide markdown content first!');
+                return;
+            }
+            
+            if (!question) {
+                alert('Please ask a question!');
+                return;
+            }
+
+            // Add user message to chat
+            addMessage(question, 'user');
+            
+            // Clear input
+            userQuestion.value = '';
+            
+            // Show loading
+            showLoading(true);
+            
+            try {
+                const formData = new FormData();
+                formData.append('markdown_input', markdown);
+                formData.append('user_question', question);
+                
+                const response = await fetch('/chatbot/chat', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessage(data.response, 'bot');
+                } else {
+                    addMessage(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                addMessage(`Error: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Preview markdown
+        previewBtn.addEventListener('click', async () => {
+            const markdown = markdownInput.value.trim();
+            
+            if (!markdown) {
+                alert('Please provide markdown content first!');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                const formData = new FormData();
+                formData.append('markdown_input', markdown);
+                
+                const response = await fetch('/chatbot/process-markdown', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    previewContent.innerHTML = data.html_content;
+                    previewModal.style.display = 'block';
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Close modal
+        closeModal.addEventListener('click', () => {
+            previewModal.style.display = 'none';
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                previewModal.style.display = 'none';
+            }
+        });
+
+        // Add message to chat
+        function addMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}-message`;
+            
+            if (type === 'user') {
+                messageDiv.innerHTML = `<strong>You:</strong> ${message}`;
+            } else if (type === 'bot') {
+                messageDiv.innerHTML = `<strong>🤖 Gemini:</strong> ${message.replace(/\n/g, '<br>')}`;
+            } else if (type === 'error') {
+                messageDiv.innerHTML = `<strong>❌ Error:</strong> ${message}`;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show/hide loading spinner
+        function showLoading(show) {
+            loadingSpinner.style.display = show ? 'flex' : 'none';
+        }
+
+        // Auto-resize textarea
+        markdownInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    </script>
+</body>
+</html>

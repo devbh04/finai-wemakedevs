@@ -1,9 +1,11 @@
 #ignore env and pycache
 venv/
+pycache/
 _pycache_/
-__pycache__/
 .env
 #ignore all type of .env files
 *.env
 markdown_files/
 input_files/
+reports/
+output_reports/

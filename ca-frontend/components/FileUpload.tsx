@@ -1,6 +1,6 @@
 "use client";
-import { useRef, useEffect } from "react";
-import { Upload, FileCheck2, Trash2 } from "lucide-react";
+import { useRef, useEffect, useState } from "react";
+import { Upload, FileCheck2, Trash2, Shield, Key } from "lucide-react";
 import { Button } from "./ui/button";
 import axios from "axios";
 import { useFileUploadStore } from "@/lib/store";
@@ -11,10 +11,33 @@ interface FileUploadProps {
     optionFileNames: string[];
     requiredDocs?: string[];
     optionalDocs?: string[];
+    enableEncryption?: boolean;
+    onEncryptedUploadComplete?: (sessionData: any) => void;
+    showGrantAccessButton?: boolean;
+    onGrantAccess?: () => void;
+    isGrantingAccess?: boolean;
 }
 
-export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames = [], requiredDocs = [], optionalDocs = [] }: FileUploadProps) {
+export default function FileUpload({ 
+    onFileAssign, 
+    onFileRemove, 
+    optionFileNames = [], 
+    requiredDocs = [], 
+    optionalDocs = [],
+    enableEncryption = false,
+    onEncryptedUploadComplete,
+    showGrantAccessButton = false,
+    onGrantAccess,
+    isGrantingAccess = false
+}: FileUploadProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // Local state for encryption flow
+    const [encryptionMode, setEncryptionMode] = useState(false);
+    const [encryptedFiles, setEncryptedFiles] = useState<{[key: string]: boolean}>({});
+    const [uploadSession, setUploadSession] = useState<any>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [showGrantAccess, setShowGrantAccess] = useState(false);
     
     // Zustand store hooks
     const {
@@ -25,23 +48,65 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
         removeFile,
         getFileForOption,
         getPreviewUrlForOption,
-        getAllAssignedOptions
+        getAllAssignedOptions,
+        secureSession,
+        uploadedFiles,
+        isAccessGranted,
+        setSecureSession,
+        setUploadedFiles,
+        grantAccess,
+        resetSecureState
     } = useFileUploadStore();
 
-    const processNewFile = (file: File) => {
+    const processNewFile = async (file: File) => {
         if (!activeOption) {
             alert("Please select an option first before uploading.");
             return;
         }
 
         if (file && (file.type === "application/pdf" || file.type === "image/png" || file.type === "image/jpeg")) {
-            // Add file to Zustand store
-            addFile(activeOption, file);
-            
-            // Notify parent component
-            onFileAssign(activeOption, file);
+            if (enableEncryption) {
+                await handleEncryptedUpload(file);
+            } else {
+                // Regular file upload
+                addFile(activeOption, file);
+                onFileAssign(activeOption, file);
+            }
         } else {
             alert("Please select a valid PDF, JPG, or PNG file.");
+        }
+    };
+
+    const handleEncryptedUpload = async (file: File) => {
+        if (!activeOption) return;
+        
+        try {
+            setIsUploading(true);
+            
+            // For FileUpload component, we'll just mark file as encrypted and let parent handle upload
+            // This is because the main upload logic is handled in the parent component (page.tsx)
+            
+            // Mark file as encrypted and add to regular file store for preview
+            setEncryptedFiles(prev => ({ ...prev, [activeOption as string]: true }));
+            addFile(activeOption, file);
+            onFileAssign(activeOption, file);
+
+            console.log(`File ${file.name} marked as encrypted for ${activeOption}`);
+
+        } catch (error: any) {
+            console.error('Encryption setup failed:', error);
+            alert(`Encryption setup failed: ${error.message}`);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleGrantAccess = async () => {
+        // Delegate to parent component handler if provided
+        if (onGrantAccess) {
+            onGrantAccess();
+        } else {
+            alert('Grant access handler not configured');
         }
     };
 
@@ -66,6 +131,15 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
     const handleUnassignFile = (optionName: string) => {
         // Remove from Zustand store
         removeFile(optionName);
+        
+        // Remove from encrypted files tracking
+        if (encryptedFiles[optionName]) {
+            setEncryptedFiles(prev => {
+                const newState = { ...prev };
+                delete newState[optionName];
+                return newState;
+            });
+        }
         
         // Notify parent component
         if (onFileRemove) {
@@ -94,7 +168,7 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
             {/* Options */}
             <div className="w-full lg:w-1/3 flex flex-col lg:min-w-[300px] lg:max-w-[400px]">
                 <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 px-2 text-gray-800">Required Documents</h3>
-                <div className="flex-1 p-2 sm:p-3 overflow-y-auto bg-white border border-amber-200 rounded-lg shadow-sm max-h-[300px] lg:max-h-[calc(70vh-80px)]">
+                <div className="flex-1 p-2 sm:p-3 overflow-y-auto bg-white border border-amber-200 rounded-lg shadow-sm">
                     <div className="space-y-3">
                         {optionFileNames.map(optionName => {
                             const isAssigned = !!getFileForOption(optionName);
@@ -120,6 +194,14 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
                                             {isAssigned && <FileCheck2 size={16} className="flex-shrink-0 sm:w-[18px] sm:h-[18px]" />}
                                         </div>
                                         <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                                            {encryptedFiles[optionName] && (
+                                                <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium flex items-center gap-1 ${
+                                                    isAssigned ? 'bg-blue-800 text-blue-100' : 'bg-blue-100 text-blue-800'
+                                                }`}>
+                                                    <Shield size={10} />
+                                                    Encrypted
+                                                </span>
+                                            )}
                                             {isRequired && (
                                                 <span className={`text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full font-medium ${
                                                     isAssigned ? 'bg-green-800 text-green-100' : 'bg-red-100 text-red-800'
@@ -178,15 +260,23 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
                                     )}
                                 </div>
                             </div>
-                            {assignedFileForActiveOption && (
-                                <button
-                                    onClick={() => handleUnassignFile(activeOption)}
-                                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs sm:text-sm font-medium self-end sm:self-auto"
-                                >
-                                    <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                                    <span className="hidden sm:inline">Remove</span>
-                                </button>
-                            )}
+                            <div className="flex items-center gap-2">
+                                {encryptedFiles[activeOption] && (
+                                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-lg">
+                                        <Shield size={12} />
+                                        <span className="text-xs font-medium">Encrypted</span>
+                                    </div>
+                                )}
+                                {assignedFileForActiveOption && (
+                                    <button
+                                        onClick={() => handleUnassignFile(activeOption)}
+                                        className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-xs sm:text-sm font-medium self-end sm:self-auto"
+                                    >
+                                        <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                                        <span className="hidden sm:inline">Remove</span>
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Main content area */}
@@ -328,17 +418,31 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
                                     </div>
                                 ) : (
                                     <div
-                                        className="w-full h-[280px] sm:h-[350px] lg:h-full lg:max-h-[calc(70vh-160px)] border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 p-4"
-                                        onClick={() => fileInputRef.current?.click()}
+                                        className={`w-full h-[280px] sm:h-[350px] lg:h-full lg:max-h-[calc(70vh-160px)] border-2 border-dashed rounded-lg flex flex-col items-center justify-center transition-all duration-200 p-4 ${
+                                            isUploading 
+                                                ? 'border-blue-300 bg-blue-50 text-blue-600 cursor-wait' 
+                                                : enableEncryption 
+                                                    ? 'border-blue-300 text-blue-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50'
+                                                    : 'border-gray-300 text-gray-500 cursor-pointer hover:border-blue-400 hover:bg-blue-50'
+                                        }`}
+                                        onClick={() => !isUploading && fileInputRef.current?.click()}
                                         onDragOver={(e) => e.preventDefault()}
-                                        onDrop={handleDrop}
+                                        onDrop={!isUploading ? handleDrop : undefined}
                                     >
-                                        <Upload size={36} className="mx-auto mb-3 text-gray-400 sm:w-12 sm:h-12" />
+                                        {enableEncryption ? (
+                                            <Shield size={36} className="mx-auto mb-3 text-blue-400 sm:w-12 sm:h-12" />
+                                        ) : (
+                                            <Upload size={36} className="mx-auto mb-3 text-gray-400 sm:w-12 sm:h-12" />
+                                        )}
                                         <p className="font-medium text-center mb-2 text-sm sm:text-base px-2">
-                                            Upload document for: <span className="text-blue-600 font-semibold break-words">{activeOption}</span>
+                                            {enableEncryption ? "Secure upload" : "Upload document"} for: <span className="text-blue-600 font-semibold break-words">{activeOption}</span>
                                         </p>
-                                        <p className="text-xs sm:text-sm text-center mb-1">Click or drag & drop a file here</p>
-                                        <p className="text-xs text-center text-gray-400">Supported: PDF, JPG, PNG (max 10MB)</p>
+                                        <p className="text-xs sm:text-sm text-center mb-1">
+                                            {isUploading ? "Encrypting and uploading..." : "Click or drag & drop a file here"}
+                                        </p>
+                                        <p className="text-xs text-center text-gray-400">
+                                            {enableEncryption ? "Files will be encrypted before upload" : "Supported: PDF, JPG, PNG (max 10MB)"}
+                                        </p>
                                     </div>
                                 )}
                             </div>
@@ -402,6 +506,12 @@ export default function FileUpload({ onFileAssign, onFileRemove, optionFileNames
                                                                 {file?.name || 'Unknown file'}
                                                             </p>
                                                             <div className="flex flex-wrap gap-1">
+                                                                {encryptedFiles[optionName] && (
+                                                                    <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium flex items-center gap-1">
+                                                                        <Shield size={10} />
+                                                                        Encrypted
+                                                                    </span>
+                                                                )}
                                                                 {requiredDocs.includes(optionName) && (
                                                                     <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
                                                                         Required

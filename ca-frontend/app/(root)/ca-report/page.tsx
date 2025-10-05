@@ -6,6 +6,7 @@ import { ArrowLeft, Download, FileText, Calendar, User } from "lucide-react";
 import ReportDisplay from "@/components/markdown/ReportDisplay";
 import PictorialDashboard from "@/components/PictorialDashboard";
 import ITRHelperButton from "@/components/itr-helper/ITRHelperButton";
+import ChatbotOverlay from "@/components/chatbot/ChatbotOverlay";
 
 interface AnalysisResult {
   task: string;
@@ -175,6 +176,7 @@ export default function CAReport() {
       <div >
         <ITRHelperButton />
       </div>
+      <ChatbotOverlay reportType="ca-report" />
     </div>
   );
 }

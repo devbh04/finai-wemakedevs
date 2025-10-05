@@ -201,7 +201,7 @@ async def analyze_asset_investment(
         )
         
         # Extract summary from the result (first 300 characters for preview)
-        summary = result_content[:300] + "..." if len(result_content) > 300 else result_content
+        summary = result_content
         
         print(f"Analysis completed. Report saved to: {report_path}")
         

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import ITRHelperButton from "@/components/itr-helper/ITRHelperButton";
+import ITRReportRenderer from "@/components/itr-report/ITRReportRenderer";
+import ChatbotOverlay from "@/components/chatbot/ChatbotOverlay";
 
 interface ITRResult {
   task?: string;
@@ -52,7 +54,21 @@ export default function ITRReportPage() {
   }, []);
 
   const handleBackToHome = () => {
-    window.location.href = '/';
+    window.location.href = '/ca-report';
+  };
+
+  // Check if we have detailed markdown content
+  const hasDetailedReport = itrResult?.markdown && itrResult.markdown.length > 500;
+  
+  const getReportType = (): 'BUSINESSMAN' | 'SALARIED' | 'SELF-EMPLOYED' => {
+    const task = itrResult?.task?.toLowerCase() || '';
+    const clientCategory = itrResult?.client_category?.toLowerCase() || '';
+    
+    if (task.includes('businessman') || clientCategory.includes('business')) return 'BUSINESSMAN';
+    if (task.includes('salaried') || clientCategory.includes('salaried')) return 'SALARIED';
+    if (task.includes('self-employed') || task.includes('self_employed') || clientCategory.includes('self')) return 'SELF-EMPLOYED';
+    
+    return 'SALARIED'; // default
   };
 
   const handleDownloadReport = () => {
@@ -105,6 +121,28 @@ Report saved to: ${itrResult.file_saved || 'Not specified'}
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // If we have detailed markdown content, use the new renderer
+  if (hasDetailedReport) {
+    return (
+      <div>
+        <ITRReportRenderer
+          reportContent={itrResult.markdown!}
+          reportType={getReportType()}
+          generatedDate={new Date().toLocaleDateString('en-IN', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
+          task={itrResult.task || 'ITR Tax Optimization'}
+          caReportLength={itrResult.ca_report_length || 0}
+          documentsProcessed={itrResult.files_processed || 1}
+        />
+        <ITRHelperButton />
+        <ChatbotOverlay reportType="itr-report" />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -368,6 +406,7 @@ Report saved to: ${itrResult.file_saved || 'Not specified'}
 
       {/* ITR Helper Button */}
       <ITRHelperButton />
+      <ChatbotOverlay reportType="itr-report" />
     </div>
   );
 }

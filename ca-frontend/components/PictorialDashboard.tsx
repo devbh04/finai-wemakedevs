@@ -26,7 +26,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import UniversalChart from './charts/UniversalChart';
 import TaxRegimeComparison from './TaxRegimeComparison';
-import FinancialHealthScore from './FinancialHealthScore';
 import IncomeExpenseBreakdown from './IncomeExpenseBreakdown';
 import BusinessKPIsDashboard from './BusinessKPIsDashboard';
 import QuarterlyDashboard from './QuarterlyDashboard';
@@ -628,17 +627,6 @@ export default function PictorialDashboard({ markdownContent, reportType }: Pict
                   transition={{ delay: 0.05 }}
                 >
                   <TaxRegimeComparison data={data.tax_regime_comparison} />
-                </motion.section>
-              )}
-
-              {/* Financial Health Score - For Business/Self-Employed */}
-              {(['self_employed', 'business', 'corporate'].includes(reportType.toLowerCase())) && data.financial_health_score && (
-                <motion.section
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 }}
-                >
-                  <FinancialHealthScore data={data.financial_health_score} />
                 </motion.section>
               )}
 
