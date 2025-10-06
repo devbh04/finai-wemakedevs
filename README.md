@@ -4,6 +4,8 @@
 
 [![Next.js](https://img.shields.io/badge/Next.js-13-informational?style=flat&logo=nextdotjs)](https://nextjs.org)  [![FastAPI](https://img.shields.io/badge/FastAPI-0.95-informational?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 
+Demo Video - https://www.youtube.com/watch?v=zZvB0BgM5pQ
+
 ## 🚀 Overview
 
 FinAI is a comprehensive financial technology platform that leverages cutting-edge AI agents to provide instant, accurate, and cost-effective financial analysis services. Built with modern web technologies and powered by advanced AI models, FinAI transforms complex financial processes into simple, automated workflows.
