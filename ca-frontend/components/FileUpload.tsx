@@ -83,94 +83,30 @@ export default function FileUpload({
         try {
             setIsUploading(true);
             
-            // Create upload session if not exists
-            let currentSession = uploadSession;
-            if (!currentSession) {
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-                const sessionResponse = await axios.post(`${apiUrl}/secure/session/create`);
-                currentSession = sessionResponse.data;
-                setUploadSession(currentSession);
-                setSecureSession(currentSession);
-            }
-
-            // Upload encrypted file
-            const formData = new FormData();
-            formData.append('files', file);
-
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-            const uploadResponse = await axios.post(
-                `${apiUrl}/secure/session/${currentSession.upload_session_id}/upload`,
-                formData,
-                {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                    timeout: 120000,
-                }
-            );
-
+            // For FileUpload component, we'll just mark file as encrypted and let parent handle upload
+            // This is because the main upload logic is handled in the parent component (page.tsx)
+            
             // Mark file as encrypted and add to regular file store for preview
             setEncryptedFiles(prev => ({ ...prev, [activeOption as string]: true }));
             addFile(activeOption, file);
             onFileAssign(activeOption, file);
 
-            // Update uploaded files list
-            const currentUploaded = uploadedFiles || [];
-            const newUploadedFiles = [
-                ...currentUploaded,
-                ...uploadResponse.data.files.map((f: any) => ({
-                    filename: f.filename,
-                    s3_key: f.s3_key,
-                    encrypted: true
-                }))
-            ];
-            setUploadedFiles(newUploadedFiles);
-
-            // Show grant access button if we have uploaded files
-            if (newUploadedFiles.length > 0) {
-                setShowGrantAccess(true);
-            }
+            console.log(`File ${file.name} marked as encrypted for ${activeOption}`);
 
         } catch (error: any) {
-            console.error('Encrypted upload failed:', error);
-            alert(`Encrypted upload failed: ${error.response?.data?.detail || error.message}`);
+            console.error('Encryption setup failed:', error);
+            alert(`Encryption setup failed: ${error.message}`);
         } finally {
             setIsUploading(false);
         }
     };
 
     const handleGrantAccess = async () => {
+        // Delegate to parent component handler if provided
         if (onGrantAccess) {
             onGrantAccess();
-        } else if (!uploadSession?.access_token) {
-            alert('No upload session found');
-            return;
         } else {
-            try {
-                const formData = new FormData();
-                formData.append('access_token', uploadSession.access_token);
-                formData.append('client_type', 'business'); // Default for now
-
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-                const grantResponse = await axios.post(
-                    `${apiUrl}/secure/session/${uploadSession.upload_session_id}/grant`,
-                    formData,
-                    {
-                        headers: { 'Content-Type': 'multipart/form-data' },
-                        timeout: 240000,
-                    }
-                );
-
-                // Grant access in store
-                grantAccess(grantResponse.data.processing_key);
-                
-                // Notify parent component with the complete analysis result
-                if (onEncryptedUploadComplete) {
-                    onEncryptedUploadComplete(grantResponse.data);
-                }
-
-            } catch (error: any) {
-                console.error('Grant access failed:', error);
-                alert(`Grant access failed: ${error.response?.data?.detail || error.message}`);
-            }
+            alert('Grant access handler not configured');
         }
     };
 
@@ -232,7 +168,7 @@ export default function FileUpload({
             {/* Options */}
             <div className="w-full lg:w-1/3 flex flex-col lg:min-w-[300px] lg:max-w-[400px]">
                 <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3 px-2 text-gray-800">Required Documents</h3>
-                <div className="flex-1 p-2 sm:p-3 overflow-y-auto bg-white border border-amber-200 rounded-lg shadow-sm max-h-[300px] lg:max-h-[calc(70vh-80px)]">
+                <div className="flex-1 p-2 sm:p-3 overflow-y-auto bg-white border border-amber-200 rounded-lg shadow-sm">
                     <div className="space-y-3">
                         {optionFileNames.map(optionName => {
                             const isAssigned = !!getFileForOption(optionName);

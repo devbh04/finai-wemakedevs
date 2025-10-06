@@ -25,11 +25,10 @@ export default function Home() {
   const [selectedButton, setSelectedButton] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [useEncryption, setUseEncryption] = useState(false);
-  const [encryptedFiles, setEncryptedFiles] = useState<string[]>([]);
   const [uploadSession, setUploadSession] = useState<any>(null);
 
   // Zustand store
-  const { files, clearAllFiles, addFile, secureSession, isAccessGranted, uploadedFiles } = useFileUploadStore();
+  const { files, addFile } = useFileUploadStore();
 
   // Enable smooth scrolling with better performance
   useEffect(() => {
@@ -75,45 +74,84 @@ export default function Home() {
     window.location.href = "/ca-report";
   };
 
-  const handleGrantAccess = async () => {
-    if (!secureSession?.access_token) {
-      alert('No upload session found');
+  const handleSecureUpload = async () => {
+    if (!selectedButton) {
+      alert("Please select an occupation type first.");
       return;
     }
 
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('access_token', secureSession.access_token);
-      
+
       // Map frontend button values to backend expected values
       const clientTypeMapping: { [key: string]: string } = {
         salaried: "salaried",
         "self-employed": "self_employed",
         businessman: "business",
       };
-      const clientType = clientTypeMapping[selectedButton || "business"] || "business";
-      formData.append('client_type', clientType);
+
+      const clientType = clientTypeMapping[selectedButton] || selectedButton;
+      formData.append("client_type", clientType);
+
+      // Add all uploaded files
+      Object.values(assignedFiles).forEach((file) => {
+        formData.append("files", file);
+      });
+
+      console.log("Starting secure upload...");
+      console.log("Frontend button:", selectedButton);
+      console.log("Backend client_type:", clientType);
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-      const grantResponse = await axios.post(
-        `${apiUrl}/secure/session/${secureSession.upload_session_id}/grant`,
+      
+      // Step 1: Secure upload
+      const uploadResponse = await axios.post(
+        `${apiUrl}/secure/upload`,
         formData,
         {
-          headers: { 'Content-Type': 'multipart/form-data' },
-          timeout: 240000,
+          headers: { "Content-Type": "multipart/form-data" },
+          timeout: 120000,
+          withCredentials: false,
         }
       );
 
-      console.log("Grant access response:", grantResponse.data);
+      console.log("Secure upload response:", uploadResponse.data);
       
-      // Store the result and navigate
-      localStorage.setItem("caAnalysisResult", JSON.stringify(grantResponse.data));
-      window.location.href = "/ca-report";
+      if (uploadResponse.data.status === "success") {
+        // Store session data
+        const sessionData = {
+          upload_session_id: uploadResponse.data.upload_session_id,
+          access_token: uploadResponse.data.access_token
+        };
+        setUploadSession(sessionData);
+        
+        // Step 2: Grant access and process (optimized single call)
+        const grantFormData = new FormData();
+        grantFormData.append('access_token', uploadResponse.data.access_token);
+        grantFormData.append('client_type', clientType);
+
+        const grantResponse = await axios.post(
+          `${apiUrl}/secure/session/${uploadResponse.data.upload_session_id}/grant`,
+          grantFormData,
+          {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            timeout: 240000,
+          }
+        );
+
+        console.log("Grant and process response:", grantResponse.data);
+        
+        // Store the result and navigate
+        localStorage.setItem("caAnalysisResult", JSON.stringify(grantResponse.data));
+        window.location.href = "/ca-report";
+      } else {
+        throw new Error(uploadResponse.data.message || "Upload failed");
+      }
       
     } catch (error: any) {
-      console.error('Grant access failed:', error);
-      alert(`Grant access failed: ${error.response?.data?.detail || error.message}`);
+      console.error('Secure processing failed:', error);
+      alert(`Secure processing failed: ${error.response?.data?.message || error.message}`);
     } finally {
       setLoading(false);
     }
@@ -687,57 +725,36 @@ export default function Home() {
                         )}
                       </div>
 
-                      {useEncryption && secureSession && (uploadedFiles || []).length > 0 && !isAccessGranted ? (
-                        <Button
-                          onClick={handleGrantAccess}
-                          disabled={loading}
-                          className="cursor-pointer bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-medium py-2 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors text-sm sm:text-lg w-full sm:w-auto flex items-center justify-center gap-2 mx-auto"
-                        >
-                          {loading ? (
-                            <div className="flex items-center justify-center space-x-2">
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              <span>Analyzing...</span>
-                            </div>
-                          ) : (
-                            <>
-                              <Shield className="h-4 w-4" />
-                              Grant Access & Analyze
-                            </>
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={handleUpload}
-                          disabled={
-                            loading ||
-                            (useEncryption && !isAccessGranted) ||
-                            documentConfig.options.filter(
-                              (doc) => assignedFiles[doc]
-                            ).length !== documentConfig.options.length
-                          }
-                          className="cursor-pointer bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-2 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors text-sm sm:text-lg w-full sm:w-auto"
-                        >
-                          {loading ? (
-                            <div className="flex items-center justify-center space-x-2">
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              <span>Analyzing Documents...</span>
-                            </div>
-                          ) : (
-                            `🔍 Analyze ${
-                              Object.keys(assignedFiles).length
-                            } Document${
-                              Object.keys(assignedFiles).length !== 1 ? "s" : ""
-                            }`
-                          )}
-                        </Button>
-                      )}
+                      <Button
+                        onClick={useEncryption ? handleSecureUpload : handleUpload}
+                        disabled={
+                          loading ||
+                          documentConfig.options.filter(
+                            (doc) => assignedFiles[doc]
+                          ).length !== documentConfig.options.length
+                        }
+                        className="cursor-pointer bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium py-2 sm:py-3 px-4 sm:px-8 rounded-lg transition-colors text-sm sm:text-lg w-full sm:w-auto flex items-center justify-center gap-2"
+                      >
+                        {loading ? (
+                          <div className="flex items-center justify-center space-x-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <span>{useEncryption ? "Securely Processing..." : "Analyzing Documents..."}</span>
+                          </div>
+                        ) : (
+                          <>
+                            {useEncryption ? <Shield className="h-4 w-4" /> : <span>🔍</span>}
+                            {useEncryption ? 
+                              `🔒 Secure Analyze ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? "s" : ""}` :
+                              `🔍 Analyze ${Object.keys(assignedFiles).length} Document${Object.keys(assignedFiles).length !== 1 ? "s" : ""}`
+                            }
+                          </>
+                        )}
+                      </Button>
 
                       {/* Upload Info */}
                       <div className="mt-2 sm:mt-3 text-xs text-gray-500 px-2 sm:px-0">
-                        {useEncryption && secureSession && (uploadedFiles || []).length > 0 && !isAccessGranted ? (
-                          `${(uploadedFiles || []).length} encrypted file(s) ready for analysis. Click "Grant Access & Analyze" to proceed.`
-                        ) : useEncryption && !secureSession ? (
-                          "Enable encryption mode and upload files securely"
+                        {useEncryption ? (
+                          "Secure encryption mode enabled"
                         ) : documentConfig.options.length > 0 &&
                         documentConfig.options.filter(
                           (doc) => assignedFiles[doc]

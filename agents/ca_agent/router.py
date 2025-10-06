@@ -43,7 +43,7 @@ async def test_crew():
         return JSONResponse(content={
             "status": "error",
             "error": str(e),
-            "error_type": type(e).__name__
+            "error_type": type(e)._name_
         }, status_code=500)
 
 @router.post("/analyze")
@@ -81,8 +81,8 @@ async def analyze_documents(
             print(f"DEBUG: Crew result str: {str(result)[:200]}...")
             
             # Check if result has attributes we expect
-            if hasattr(result, '__dict__'):
-                print(f"DEBUG: Result attributes: {list(result.__dict__.keys())}")
+            if hasattr(result, '_dict_'):
+                print(f"DEBUG: Result attributes: {list(result._dict_.keys())}")
             if hasattr(result, 'raw'):
                 print(f"DEBUG: Result.raw type: {type(result.raw)}")
                 print(f"DEBUG: Result.raw: {str(result.raw)[:100]}...")
@@ -131,7 +131,7 @@ async def analyze_documents(
             print("DEBUG: Using fallback content")
 
         # Clean up content
-        result_content = str(result_content).replace('***', '').replace('**', '')
+        result_content = str(result_content).replace('', '').replace('*', '')
         result_content = re.sub(r'\n{3,}', '\n\n', result_content)
 
         # Save as markdown
@@ -142,8 +142,8 @@ async def analyze_documents(
         file_path = markdown_dir / filename
 
         markdown_content = f"# CA Analysis Report - {client_type.title()}\n\n"
-        markdown_content += f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        markdown_content += f"**Task:** {task_name}\n\n---\n\n{result_content}"
+        markdown_content += f"*Generated:* {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        markdown_content += f"*Task:* {task_name}\n\n---\n\n{result_content}"
 
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(markdown_content)
